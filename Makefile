@@ -15,4 +15,7 @@ distclean: clean
 	rm -f brandes
 
 testsclean:
-	rm -f res-*.txt errors.txt
+	rm -f res-*.txt errors.txt *.csv *.log
+
+test:
+	cd .. ; python3 verifyprograms.py
