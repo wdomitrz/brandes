@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -17,10 +16,7 @@ int main(int argc, char *argv[]) {
     std::ifstream input_file(input_file_name);
     std::vector<std::pair<node_id, node_id>> edges;
 
-    node_id a = (unsigned long long)123;
     node_id node_1, node_2;
-    node_id max_node_id = 0;
-
     while (input_file >> node_1 >> node_2) {
         edges.push_back(std::make_pair(node_1, node_2));
     }

@@ -2,8 +2,11 @@
 
 all: brandes
 
+COMPILER_OPTIONS := -Wextra -Wall -O3
+CUDA_COMPILER_OPTIONS := $(foreach option, $(COMPILER_OPTIONS), --compiler-options $(option))
+
 brandes: $(wildcard src/*.cu) $(wildcard src/*.h)
-	nvcc -o brandes src/*.cu
+	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/*.cu
 
 clean:
 	rm -f src/*.o
