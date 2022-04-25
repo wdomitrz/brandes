@@ -1,4 +1,4 @@
-.PHONY: all clean
+.PHONY: all clean distclean testsclean
 
 all: brandes
 
@@ -10,7 +10,9 @@ brandes: $(wildcard src/*.cu) $(wildcard src/*.h)
 
 clean:
 	rm -f src/*.o
-	rm -f brandes
 
 distclean: clean
 	rm -f brandes
+
+testsclean:
+	rm -f res-*.txt errors.txt
