@@ -3,7 +3,7 @@
 all: brandes
 
 brandes: $(wildcard src/*.cu) $(wildcard src/*.h)
-	cp clbla interpreter
+	nvcc -o brandes src/*.cu
 
 clean:
 	rm -f src/*.o
