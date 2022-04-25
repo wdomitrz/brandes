@@ -9,15 +9,15 @@
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         std::cerr << "Two arguments are required\n"
-                     "./brandes input-file output-file\n";
+                     "./brandes in-file out-file\n";
         exit(1);
     }
-    const std::string input_file_name(argv[1]), out_file_name(argv[2]);
-    std::ifstream input_file(input_file_name);
+    const std::string in_file_name(argv[1]), out_file_name(argv[2]);
+    std::ifstream in_file(in_file_name);
     std::vector<std::pair<node_id, node_id>> edges;
 
     node_id node_1, node_2;
-    while (input_file >> node_1 >> node_2) {
+    while (in_file >> node_1 >> node_2) {
         edges.push_back(std::make_pair(node_1, node_2));
     }
 
@@ -32,5 +32,11 @@ int main(int argc, char *argv[]) {
              j++) {
             std::cout << i << " " << compact_graph[j] << "\n";
         }
+    }
+
+    int64_t res[n] = {42};
+    std::ofstream out_file(out_file_name);
+    for (node_id i = 0; i < n; i++) {
+        out_file << res[i] << "\n";
     }
 }
