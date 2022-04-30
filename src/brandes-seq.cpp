@@ -9,7 +9,7 @@
 
 void brandes(const int32_t n, const int32_t starting_positions[],
              const int32_t compact_graph[], double CB[]) {
-    for (int s = 0; s < n; s++) {
+    for (int32_t s = 0; s < n; s++) {
         std::stack<int32_t> S;
         std::vector<std::vector<int32_t>> P(n);
         std::vector<int32_t> sigma(n, 0);
@@ -46,9 +46,9 @@ void brandes(const int32_t n, const int32_t starting_positions[],
                     delta[v] += ((double)sigma[v]) / ((double)sigma[w]) *
                                 ((double)1.0 + (double)delta[w]);
                 }
-                if (w != s) {
-                    CB[w] += delta[w];
-                }
+            }
+            if (w != s) {
+                CB[w] += delta[w];
             }
         }
     }
