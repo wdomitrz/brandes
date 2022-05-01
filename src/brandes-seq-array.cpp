@@ -38,12 +38,16 @@ void brandes_kernel(const int32_t n, const int32_t starting_positions[],
                     const int32_t compact_graph[], double CB[], int32_t* S,
                     int32_t* sigma, int32_t* d, int32_t* Q, double* delta,
                     int32_t* P, int32_t* P_pos) {
+    for (int i = 0; i < n; i++) {
+        CB[i] = 0.0;
+    }
     for (int32_t s = 0; s < n; s++) {
-        std::fill_n(sigma, n, 0);
-        std::fill_n(d, n, -1);
-        std::fill_n(delta, n, 0.0);
-        std::fill_n(P_pos, n, 0);
-
+        for (int i = 0; i < n; i++) {
+            sigma[i] = 0;
+            d[i] = -1;
+            delta[i] = 0.0;
+            P_pos[i] = 0;
+        }
         int32_t S_size = 0;
         int32_t Q_size = 0;
         sigma[s] = 1;
