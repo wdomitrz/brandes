@@ -76,7 +76,7 @@ __global__ void brandes_kernel(const int32_t n,
             delta[i] = 0.0;
         }
         __syncthreads();
-        if (my_start == 0) {
+        if (threadIdx.x == 0) {
             sigma[s] = 1;
             d[s] = 0;
             cont = true;
