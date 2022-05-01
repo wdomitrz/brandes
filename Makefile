@@ -9,8 +9,8 @@ CUDA_COMPILER_OPTIONS := $(foreach option, $(COMPILER_OPTIONS), --compiler-optio
 brandes:
 	echo "asd"
 
-brandes-ker-vert: src/brandes.cu src/brandes.hpp src/brandes-ker-vert.cu
-	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes.cu src/brandes-ker-vert.cu
+brandes-par-vert: src/brandes.cu src/brandes.hpp src/brandes-par-vert.cu
+	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes.cu src/brandes-par-vert.cu
 
 brandes-seq: src/brandes.cpp src/brandes.hpp
 	g++ $(G++_COMPILER_OPTIONS) -o brandes src/brandes.cpp src/brandes-seq.cpp
