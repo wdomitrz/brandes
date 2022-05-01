@@ -76,10 +76,8 @@ void brandes_kernel(const int32_t n, const int32_t starting_positions[],
             int32_t P_iter_end = starting_positions[w] + P_pos[w];
             for (int32_t i = starting_positions[w]; i < P_iter_end; i++) {
                 int32_t v = P[i];
-                if (sigma[w] != 0) {
-                    delta[v] += ((double)sigma[v]) / ((double)sigma[w]) *
-                                ((double)1.0 + (double)delta[w]);
-                }
+                delta[v] += ((double)sigma[v]) / ((double)sigma[w]) *
+                            ((double)1.0 + (double)delta[w]);
             }
             if (w != s) {
                 CB[w] += delta[w];

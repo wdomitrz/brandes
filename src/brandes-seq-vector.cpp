@@ -37,10 +37,8 @@ void brandes(const int32_t n, const int32_t starting_positions[],
 
             for (size_t i = 0; i < P[w].size(); i++) {
                 int32_t v = P[w][i];
-                if (sigma[w] != 0) {
-                    delta[v] += ((double)sigma[v]) / ((double)sigma[w]) *
-                                ((double)1.0 + (double)delta[w]);
-                }
+                delta[v] += ((double)sigma[v]) / ((double)sigma[w]) *
+                            ((double)1.0 + (double)delta[w]);
             }
             if (w != s) {
                 CB[w] += delta[w];
