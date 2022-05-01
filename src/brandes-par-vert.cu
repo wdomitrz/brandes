@@ -1,84 +1,115 @@
+#include <cuda.h>
+
 #include <cstdint>
 #include <iostream>
 
 #include "brandes.hpp"
-#define add_to_Q(x) \
-    { Q[Q_size++] = x; }
+#include "errors.hpp"
 #define add_to_S(x) \
     { S[S_size++] = x; }
 #define add_to_P(x, y) \
     { P[starting_positions[x] + P_pos[x]++] = y; }
 
-void brandes_kernel(const int32_t n, const int32_t starting_positions[],
-                    const int32_t compact_graph[], double CB[], int32_t* S,
-                    int32_t* sigma, int32_t* d, int32_t* Q, double* delta,
-                    int32_t* P, int32_t* P_pos);
+__global__ void brandes_kernel(const int32_t n,
+                               const int32_t starting_positions[],
+                               const int32_t compact_graph[], double CB[],
+                               int32_t* sigma, int32_t* d, double* delta,
+                               int32_t* P, int32_t* P_pos);
 
 void brandes(const int32_t n, const int32_t starting_positions[],
              const int32_t compact_graph[], double CB[]) {
-    int32_t* S = (int32_t*)malloc(sizeof(int32_t) * n);
-    int32_t* sigma = (int32_t*)malloc(sizeof(int32_t) * n);
-    int32_t* d = (int32_t*)malloc(sizeof(int32_t) * n);
-    int32_t* Q = (int32_t*)malloc(sizeof(int32_t) * starting_positions[n]);
-    double* delta = (double*)malloc(sizeof(double) * n);
-    int32_t* P = (int32_t*)malloc(sizeof(int32_t) * starting_positions[n]);
-    int32_t* P_pos = (int32_t*)malloc(sizeof(int32_t) * n);
-    brandes_kernel(n, starting_positions, compact_graph, CB, S, sigma, d, Q,
-                   delta, P, P_pos);
-    free(P_pos);
-    free(P);
-    free(delta);
-    free(Q);
-    free(d);
-    free(sigma);
-    free(S);
+    int32_t *starting_positions_dev, *compact_graph_dev, *sigma, *d, *P, *P_pos;
+    double *delta, *CB_dev;
+    HANDLE_ERROR(
+        cudaMalloc((void**)&starting_positions_dev, sizeof(int32_t) * (n + 1)));
+    HANDLE_ERROR(cudaMalloc((void**)&compact_graph_dev,
+                            sizeof(int32_t) * starting_positions[n]));
+    HANDLE_ERROR(cudaMalloc((void**)&CB_dev, sizeof(double) * n));
+    HANDLE_ERROR(cudaMalloc((void**)&sigma, sizeof(int32_t) * n));
+    HANDLE_ERROR(cudaMalloc((void**)&d, sizeof(int32_t) * n));
+    HANDLE_ERROR(cudaMalloc((void**)&delta, sizeof(double) * n));
+    HANDLE_ERROR(
+        cudaMalloc((void**)&P, sizeof(int32_t) * starting_positions[n]));
+    HANDLE_ERROR(cudaMalloc((void**)&P_pos, sizeof(int32_t) * n));
+    HANDLE_ERROR(cudaMemcpy(starting_positions_dev, starting_positions,
+                            sizeof(int32_t) * (n + 1), cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy(compact_graph_dev, compact_graph,
+                            sizeof(int32_t) * starting_positions[n],
+                            cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemset(CB_dev, 0.0, sizeof(double) * n));
+    brandes_kernel<<<1, 1024>>>(n, starting_positions_dev, compact_graph_dev,
+                                CB_dev, sigma, d, delta, P, P_pos);
+    HANDLE_ERROR(
+        cudaMemcpy(CB_dev, CB, sizeof(double) * n, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaFree(P_pos));
+    HANDLE_ERROR(cudaFree(P));
+    HANDLE_ERROR(cudaFree(delta));
+    HANDLE_ERROR(cudaFree(d));
+    HANDLE_ERROR(cudaFree(sigma));
+    HANDLE_ERROR(cudaFree(CB_dev));
+    HANDLE_ERROR(cudaFree(compact_graph_dev));
+    HANDLE_ERROR(cudaFree(starting_positions_dev));
 }
 
-void brandes_kernel(const int32_t n, const int32_t starting_positions[],
-                    const int32_t compact_graph[], double CB[], int32_t* S,
-                    int32_t* sigma, int32_t* d, int32_t* Q, double* delta,
-                    int32_t* P, int32_t* P_pos) {
+__global__ void brandes_kernel(const int32_t n,
+                               const int32_t starting_positions[],
+                               const int32_t compact_graph[], double CB[],
+                               int32_t* sigma, int32_t* d, double* delta,
+                               int32_t* P, int32_t* P_pos) {
+    const int32_t my_start = 0;
+    const int32_t my_end = n;
+    const int32_t my_step = 1;
+    __shared__ bool cont;
+    __shared__ int32_t l;
     for (int32_t s = 0; s < n; s++) {
-        std::fill_n(sigma, n, 0);
-        std::fill_n(d, n, -1);
-        std::fill_n(delta, n, 0.0);
-        std::fill_n(P_pos, n, 0);
-
-        int32_t S_size = 0;
-        int32_t Q_size = 0;
-        sigma[s] = 1;
-        d[s] = 0;
-
-        add_to_Q(s);
-        for (int32_t Q_pos = 0; Q_pos < Q_size; Q_pos++) {
-            int32_t v = Q[Q_pos];
-            add_to_S(v);
-            int32_t end = starting_positions[v + 1];
-            for (int32_t i = starting_positions[v]; i < end; i++) {
-                int32_t w = compact_graph[i];
-                if (d[w] < 0) {
-                    add_to_Q(w);
-                    d[w] = d[v] + 1;
-                }
-                if (d[w] == d[v] + 1) {
-                    sigma[w] += sigma[v];
-                    add_to_P(w, v);
+        for (int i = my_start; i < my_end; i += my_step) {
+            d[i] = 0;
+            sigma[i] = 1;
+            d[i] = -1;
+            P_pos[i] = 0;
+            sigma[i] = 0;
+            delta[i] = 0;
+        }
+        if (my_start == 0) {
+            sigma[s] = 1;
+            d[s] = 0;
+            cont = true;
+        }
+        for (l = 0; cont; l++) {
+            cont = false;
+            for (int32_t u = my_start; u < my_end; u += my_step) {
+                if (d[u] == l) {
+                    int32_t end = starting_positions[u + 1];
+                    for (int32_t i = starting_positions[u]; i < end; i++) {
+                        int32_t v = compact_graph[i];
+                        if (d[v] == -1) {
+                            d[v] = l + 1;
+                            cont = true;
+                        } else if (d[v] == l - 1) {
+                            add_to_P(v, u);
+                        }
+                        if (d[v] == l + 1) {
+                            atomicAdd(&sigma[v], sigma[u]);
+                        }
+                    }
                 }
             }
         }
-        for (int32_t i = S_size; i > 0; i--) {
-            int32_t w = S[i - 1];
+        for (l--; l > 0; l--) {
+            for (int32_t u = my_start; u < my_end; u += my_step) {
+                if (d[u] == 0) {
+                    int32_t P_iter_end = starting_positions[u] + P_pos[u];
+                    for (int32_t i = starting_positions[u]; i < P_iter_end;
+                         i++) {
+                        int32_t v = P[i];
 
-            int32_t P_iter_end = starting_positions[w] + P_pos[w];
-            for (int32_t i = starting_positions[w]; i < P_iter_end; i++) {
-                int32_t v = P[i];
-                if (sigma[w] != 0) {
-                    delta[v] += ((double)sigma[v]) / ((double)sigma[w]) *
-                                ((double)1.0 + (double)delta[w]);
+                        delta[u] += ((double)sigma[u]) / ((double)sigma[v]) *
+                                    ((double)1.0 + (double)delta[v]);
+                    }
                 }
             }
         }
-        for (int32_t v = 0; v < n; v++) {
+        for (int32_t v = my_start; v < my_end; v += my_step) {
             if (v != s) {
                 CB[v] += delta[v];
             }
