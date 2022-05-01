@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <iostream>
+#include <vector>
 
 #include "brandes.hpp"
 #define add_to_Q(x) \
@@ -16,22 +17,16 @@ void brandes_kernel(const int32_t n, const int32_t starting_positions[],
 
 void brandes(const int32_t n, const int32_t starting_positions[],
              const int32_t compact_graph[], double CB[]) {
-    int32_t* S = (int32_t*)malloc(sizeof(int32_t) * n);
-    int32_t* sigma = (int32_t*)malloc(sizeof(int32_t) * n);
-    int32_t* d = (int32_t*)malloc(sizeof(int32_t) * n);
-    int32_t* Q = (int32_t*)malloc(sizeof(int32_t) * starting_positions[n]);
-    double* delta = (double*)malloc(sizeof(double) * n);
-    int32_t* P = (int32_t*)malloc(sizeof(int32_t) * starting_positions[n]);
-    int32_t* P_pos = (int32_t*)malloc(sizeof(int32_t) * n);
-    brandes_kernel(n, starting_positions, compact_graph, CB, S, sigma, d, Q,
-                   delta, P, P_pos);
-    free(P_pos);
-    free(P);
-    free(delta);
-    free(Q);
-    free(d);
-    free(sigma);
-    free(S);
+    std::vector<int32_t> S(n);
+    std::vector<int32_t> sigma(n);
+    std::vector<int32_t> d(n);
+    std::vector<int32_t> Q(starting_positions[n]);
+    std::vector<double> delta(n);
+    std::vector<int32_t> P(starting_positions[n]);
+    std::vector<int32_t> P_pos(n);
+    brandes_kernel(n, starting_positions, compact_graph, CB, S.data(),
+                   sigma.data(), d.data(), Q.data(), delta.data(), P.data(),
+                   P_pos.data());
 }
 
 void brandes_kernel(const int32_t n, const int32_t starting_positions[],

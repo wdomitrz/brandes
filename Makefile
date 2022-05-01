@@ -6,8 +6,11 @@ COMPILER_OPTIONS := -Wextra -Wall -O3
 G++_COMPILER_OPTIONS := -Wall -Wextra -Wpedantic -O3
 CUDA_COMPILER_OPTIONS := $(foreach option, $(COMPILER_OPTIONS), --compiler-options $(option))
 
-brandes: src/brandes.cu src/brandes.hpp
-	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes.cu
+brandes:
+	echo "asd"
+
+brandes-ker-vert: src/brandes.cu src/brandes.hpp src/brandes-ker-vert.cu
+	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes.cu src/brandes-ker-vert.cu
 
 brandes-seq: src/brandes.cpp src/brandes.hpp
 	g++ $(G++_COMPILER_OPTIONS) -o brandes src/brandes.cpp src/brandes-seq.cpp
