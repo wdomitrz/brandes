@@ -60,14 +60,17 @@ __global__ void brandes_kernel(const int32_t n,
     const int32_t my_start = threadIdx.x + blockIdx.x * blockDim.x;
     const int32_t my_end = starting_positions[n];
     const int32_t my_step = blockDim.x * gridDim.x;
+    const int32_t my_start_n = threadIdx.x + blockIdx.x * blockDim.x;
+    const int32_t my_end_n = n;
+    const int32_t my_step_n = blockDim.x * gridDim.x;
     __shared__ bool cont;
     __shared__ int32_t l;
-    for (int i = my_start; i < my_end; i += my_step) {
+    for (int i = my_start_n; i < my_end_n; i += my_step_n) {
         CB[i] = 0;
     }
     for (int32_t s = 0; s < n; s++) {
         __syncthreads();
-        for (int i = my_start; i < my_end; i += my_step) {
+        for (int i = my_start_n; i < my_end_n; i += my_step_n) {
             sigma[i] = 0;
             d[i] = -1;
             delta[i] = 0.0;
@@ -80,14 +83,14 @@ __global__ void brandes_kernel(const int32_t n,
             l = 0;
         }
         __syncthreads();
-        while (cont) {
+        do {
             __syncthreads();
             cont = false;
             __syncthreads();
             for (int32_t i = my_start; i < my_end; i += my_step) {
                 const int32_t u = compact_graph[2 * i];
+                const int32_t v = compact_graph[2 * i + 1];
                 if (d[u] == l) {
-                    const int32_t v = compact_graph[2 * i + 1];
                     if (d[v] == -1) {
                         d[v] = l + 1;
                         cont = true;
@@ -101,7 +104,7 @@ __global__ void brandes_kernel(const int32_t n,
             if (threadIdx.x == 0) {
                 l++;
             }
-        }
+        } while (cont);
         __syncthreads();
         for (; l > 1;) {
             __syncthreads();
