@@ -13,7 +13,7 @@ brandes-par-edge: src/brandes.cu src/brandes.hpp src/brandes-par-edge.cu
 	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes.cu src/brandes-par-edge.cu -arch=sm_61
 
 brandes-par-vert: src/brandes.cu src/brandes.hpp src/brandes-par-vert.cu
-	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes.cu src/brandes-par-vert.cu
+	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes.cu src/brandes-par-vert.cu -arch=sm_61
 
 brandes-seq: src/brandes.cpp src/brandes.hpp
 	g++ $(G++_COMPILER_OPTIONS) -o brandes src/brandes.cpp src/brandes-seq.cpp
