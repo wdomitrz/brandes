@@ -22,11 +22,17 @@ int main(int argc, char *argv[]) {
         edges.push_back(std::make_pair(node_1, node_2));
     }
 
-    Compacted_graph_representation graph(edges);
+    Compact_graph_representation graph(edges);
 
     int32_t n = graph.size();
     const int32_t *compact_graph = graph.get_compact_graph();
     const int32_t *starting_positions = graph.get_starting_positions_of_nodes();
+
+    for (int i = 0; i < n; i++) {
+        for (int j = starting_positions[i]; j < starting_positions[i + 1];
+             j++) {
+        }
+    }
 
     std::vector<double> res(n, 0);
 
