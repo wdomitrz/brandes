@@ -6,7 +6,6 @@
 
 #include "brandes-old.hpp"
 #include "errors.hpp"
-
 #include "sizes.hpp"
 
 __global__ void brandes_kernel(const int32_t n,
@@ -77,7 +76,7 @@ __global__ void brandes_kernel(const int32_t n,
         delta = &delta_global[n * blockIdx.x];
     }
     if (blockIdx.x == 0)
-        for (int i = my_start; i < my_end; i += my_step) {
+        for (int i = my_start; i < n; i += my_step) {
             CB[i] = 0;
         }
     for (int32_t s = blockIdx.x; s < n; s += gridDim.x) {
@@ -125,7 +124,7 @@ __global__ void brandes_kernel(const int32_t n,
             for (int32_t i = my_start; i < my_end; i += my_step) {
                 const int32_t u = compact_graph[2 * i];
                 const int32_t v = compact_graph[2 * i + 1];
-                if (d[u] == l && d[v] - 1 == d[u]) {
+                if (d[u] == l && d[v] == d[u] + 1 && sigma[v] != 0) {
                     atomicAdd(&delta[u], ((double)sigma[u]) /
                                              ((double)sigma[v]) *
                                              ((double)1.0 + (double)delta[v]));
