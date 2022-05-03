@@ -1,11 +1,10 @@
-#include "brandes.hpp"
-
 #include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include "brandes-old.hpp"
 #include "compact_graph_representation.hpp"
 
 int main(int argc, char *argv[]) {

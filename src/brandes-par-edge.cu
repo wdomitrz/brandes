@@ -4,7 +4,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "brandes.hpp"
+#include "brandes-old.hpp"
 #include "errors.hpp"
 
 #define THREADS 1024

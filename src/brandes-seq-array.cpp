@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <iostream>
 
-#include "brandes.hpp"
+#include "brandes-old.hpp"
 #define add_to_Q(x) \
     { Q[Q_size++] = x; }
 #define add_to_S(x) \

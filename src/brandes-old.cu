@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "brandes.hpp"
+#include "brandes-old.hpp"
 #include "compact_graph_representation.hpp"
 
 int main(int argc, char *argv[]) {
