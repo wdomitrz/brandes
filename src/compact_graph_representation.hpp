@@ -67,6 +67,7 @@ class Compacted_graph_representation {
     Compact_graph_representation whole_graph;
     std::vector<int32_t> reach;
     std::vector<int32_t> deg;
+    std::vector<int32_t> connected_componet_size;
     std::vector<double> CB;
     std::vector<bool> removed;
     std::vector<int32_t> id_in_small_graph;
@@ -74,9 +75,10 @@ class Compacted_graph_representation {
     Compact_graph_representation* small_graph;
 
     void remove(int32_t s) {
-        // assert(deg[s] == 1);
         while (s != -1) {
             removed[s] = true;
+            if (deg[s] == 0) return;
+
             int32_t parent = -1;
             for (int32_t i = whole_graph.get_starting_positions_of_nodes()[s];
                  i < whole_graph.get_starting_positions_of_nodes()[s + 1];
@@ -90,8 +92,8 @@ class Compacted_graph_representation {
             deg[parent]--;
             reach[parent] += reach[s];
             CB[parent] += ((double)2) * ((double)reach[s]) *
-                          ((double)whole_graph.size() - reach[parent]);
-            if (deg[parent] == 1) {
+                          ((double)connected_componet_size[s] - reach[parent]);
+            if (deg[parent] <= 1) {
                 s = parent;
             } else {
                 s = -1;
@@ -100,10 +102,41 @@ class Compacted_graph_representation {
     }
 
     void initialize_degrees() {
-        deg.resize(whole_graph.size());
+        deg.resize(whole_graph.size(), 0);
         for (int32_t s = 0; s < whole_graph.size(); s++) {
             deg[s] = whole_graph.get_starting_positions_of_nodes()[s + 1] -
                      whole_graph.get_starting_positions_of_nodes()[s];
+        }
+    }
+    void push_connected_component_size(int32_t s) {
+        for (int32_t i = whole_graph.get_starting_positions_of_nodes()[s];
+             i < whole_graph.get_starting_positions_of_nodes()[s + 1]; i++) {
+            const int32_t u = whole_graph.get_compact_graph()[i];
+            if (connected_componet_size[u] != connected_componet_size[s]) {
+                connected_componet_size[u] = connected_componet_size[s];
+                push_connected_component_size(u);
+            }
+        }
+    }
+    int32_t count_connected_component_size_from(int32_t s) {
+        connected_componet_size[s] = 1;
+        for (int32_t i = whole_graph.get_starting_positions_of_nodes()[s];
+             i < whole_graph.get_starting_positions_of_nodes()[s + 1]; i++) {
+            const int32_t u = whole_graph.get_compact_graph()[i];
+            if (connected_componet_size[u] == 0) {
+                connected_componet_size[s] +=
+                    count_connected_component_size_from(u);
+            }
+        }
+        return connected_componet_size[s];
+    }
+    void initialize_connected_component_size() {
+        connected_componet_size.resize(whole_graph.size(), 0);
+        for (int32_t s = 0; s < whole_graph.size(); s++) {
+            if (connected_componet_size[s] == 0) {
+                count_connected_component_size_from(s);
+                push_connected_component_size(s);
+            }
         }
     }
     void remove_nodes() {
@@ -111,7 +144,7 @@ class Compacted_graph_representation {
         reach.resize(whole_graph.size(), 1);
         removed.resize(whole_graph.size(), false);
         for (int32_t s = 0; s < whole_graph.size(); s++) {
-            if (!removed[s] && deg[s] == 1) remove(s);
+            if (!removed[s] && deg[s] <= 1) remove(s);
         }
     }
 
@@ -121,8 +154,13 @@ class Compacted_graph_representation {
         for (int32_t s = 0; s < whole_graph.size(); s++) {
             if (!removed[s]) {
                 id_in_small_graph[s] = next_id;
-                reach_compacted.push_back(reach[s]);
                 next_id++;
+            }
+        }
+        reach_compacted.resize(next_id);
+        for (int32_t s = 0; s < whole_graph.size(); s++) {
+            if (!removed[s]) {
+                reach_compacted[id_in_small_graph[s]] = reach[s];
             }
         }
     }
@@ -135,7 +173,7 @@ class Compacted_graph_representation {
                 !removed[node_1_node_2.second]) {
                 compacted_edges.emplace_back(
                     id_in_small_graph[node_1_node_2.first],
-                    id_in_small_graph[node_1_node_2.first]);
+                    id_in_small_graph[node_1_node_2.second]);
             }
         }
         return compacted_edges;
@@ -146,6 +184,7 @@ class Compacted_graph_representation {
         const std::vector<std::pair<int32_t, int32_t>>& edges)
         : whole_graph(edges) {
         initialize_degrees();
+        initialize_connected_component_size();
         remove_nodes();
         compute_ids_and_compacted_reach();
         small_graph =

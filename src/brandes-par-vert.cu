@@ -70,7 +70,7 @@ __global__ void brandes_kernel(const int32_t n,
         for (int i = my_start; i < my_end; i += my_step) {
             sigma[i] = 0;
             d[i] = -1;
-            delta[i] = 0.0;
+            delta[i] = 1.0;
         }
         __syncthreads();
         if (my_start == 0) {
@@ -105,7 +105,7 @@ __global__ void brandes_kernel(const int32_t n,
             }
         }
         __syncthreads();
-        for (; l > 1;) {
+        while (l > 1) {
             __syncthreads();
             if (threadIdx.x == 0) l--;
             __syncthreads();
@@ -114,10 +114,9 @@ __global__ void brandes_kernel(const int32_t n,
                     const int32_t end = starting_positions[u + 1];
                     for (int32_t i = starting_positions[u]; i < end; i++) {
                         const int32_t v = compact_graph[i];
-                        if (d[v] - 1 == d[u]) {
-                            delta[u] += ((double)sigma[u]) /
-                                        ((double)sigma[v]) *
-                                        ((double)1.0 + (double)delta[v]);
+                        if (d[v] == l + 1) {
+                            delta[u] +=
+                                (double)sigma[u] / (double)sigma[v] * delta[v];
                         }
                     }
                 }
@@ -126,7 +125,7 @@ __global__ void brandes_kernel(const int32_t n,
         __syncthreads();
         for (int32_t v = my_start; v < my_end; v += my_step) {
             if (v != s) {
-                atomicAdd(&CB[v], delta[v]);
+                atomicAdd(&CB[v], delta[v] - (double)1.0);
             }
         }
     }

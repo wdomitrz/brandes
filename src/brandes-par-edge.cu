@@ -117,7 +117,7 @@ __global__ void brandes_kernel(const int32_t n,
             }
         } while (cont);
         __syncthreads();
-        for (; l > 1;) {
+        while (l > 1) {
             __syncthreads();
             if (threadIdx.x == 0) l--;
             __syncthreads();
