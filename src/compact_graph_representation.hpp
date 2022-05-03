@@ -54,52 +54,88 @@ class Compact_graph_representation {
         }
     }
 
-    const node_id* get_starting_positions_of_nodes() {
+    inline const node_id* get_starting_positions_of_nodes() {
         return starting_positions_of_nodes.data();
     }
 
-    const node_id* get_compact_graph() { return compact_graph.data(); }
+    inline const node_id* get_compact_graph() { return compact_graph.data(); }
 
-    node_id size() { return number_of_nodes; }
+    inline node_id size() { return number_of_nodes; }
 };
 class Compacted_graph_representation {
    private:
     Compact_graph_representation whole_graph;
     std::vector<int32_t> reach;
     std::vector<int32_t> deg;
-    std::vector<int32_t> parent;
+    std::vector<double> CB;
     std::vector<bool> removed;
+    std::vector<int32_t> id_in_small_graph;
+    std::vector<int32_t> reach_compacted;
     Compact_graph_representation* small_graph;
 
-    void remove(int32_t v) {
-        removed[v] = true;
-        for (int32_t i = whole_graph.get_starting_positions_of_nodes()[v];
-             i < whole_graph.get_starting_positions_of_nodes()[v + 1]; i++) {
-            const int32_t u = whole_graph.get_compact_graph()[i];
-
-            if (!removed[u]) {
-                parent[v] = u;
-                reach[u] += reach[v];
-                deg[u]--;
+    void remove(int32_t s) {
+        // assert(deg[s] == 1);
+        while (s != -1) {
+            removed[s] = true;
+            int32_t parent = -1;
+            for (int32_t i = whole_graph.get_starting_positions_of_nodes()[s];
+                 i < whole_graph.get_starting_positions_of_nodes()[s + 1];
+                 i++) {
+                const int32_t u = whole_graph.get_compact_graph()[i];
+                if (!removed[u]) {
+                    parent = u;
+                    break;
+                }
+            }
+            deg[parent]--;
+            reach[parent] += reach[s];
+            CB[parent] += ((double)2) * ((double)reach[s]) *
+                          ((double)whole_graph.size() - reach[parent]);
+            if (deg[parent] == 1) {
+                s = parent;
+            } else {
+                s = -1;
             }
         }
-        if (!removed[parent[v]]) remove(parent[v]);
     }
 
-    std::vector<std::pair<int32_t, int32_t>> get_compacted_edges(
-        const std::vector<std::pair<int32_t, int32_t>>& edges) {
+    void initialize_degrees() {
+        deg.resize(whole_graph.size());
         for (int32_t s = 0; s < whole_graph.size(); s++) {
             deg[s] = whole_graph.get_starting_positions_of_nodes()[s + 1] -
                      whole_graph.get_starting_positions_of_nodes()[s];
         }
+    }
+    void remove_nodes() {
+        CB.resize(whole_graph.size(), 0);
+        reach.resize(whole_graph.size(), 1);
+        removed.resize(whole_graph.size(), false);
         for (int32_t s = 0; s < whole_graph.size(); s++) {
             if (!removed[s] && deg[s] == 1) remove(s);
         }
+    }
+
+    void compute_ids_and_compacted_reach() {
+        id_in_small_graph.resize(whole_graph.size());
+        int32_t next_id = 0;
+        for (int32_t s = 0; s < whole_graph.size(); s++) {
+            if (!removed[s]) {
+                id_in_small_graph[s] = next_id;
+                reach_compacted.push_back(reach[s]);
+                next_id++;
+            }
+        }
+    }
+
+    std::vector<std::pair<int32_t, int32_t>> get_compacted_edges(
+        const std::vector<std::pair<int32_t, int32_t>>& edges) {
         std::vector<std::pair<int32_t, int32_t>> compacted_edges;
         for (const auto& node_1_node_2 : edges) {
             if (!removed[node_1_node_2.first] &&
                 !removed[node_1_node_2.second]) {
-                compacted_edges.push_back(node_1_node_2);
+                compacted_edges.emplace_back(
+                    id_in_small_graph[node_1_node_2.first],
+                    id_in_small_graph[node_1_node_2.first]);
             }
         }
         return compacted_edges;
@@ -109,15 +145,13 @@ class Compacted_graph_representation {
     Compacted_graph_representation(
         const std::vector<std::pair<int32_t, int32_t>>& edges)
         : whole_graph(edges) {
-        reach.resize(whole_graph.size(), 0);
-        deg.resize(whole_graph.size());
-        parent.resize(whole_graph.size());
-        removed.resize(whole_graph.size(), false);
+        initialize_degrees();
+        remove_nodes();
+        compute_ids_and_compacted_reach();
         small_graph =
             new Compact_graph_representation(get_compacted_edges(edges));
     }
-    const int32_t* get_parent() { return parent.data(); }
-    const int32_t* get_reach() { return reach.data(); }
+    const int32_t* get_reach() { return reach_compacted.data(); }
     const Compact_graph_representation get_whole_compace() {
         return whole_graph;
     }
@@ -130,4 +164,14 @@ class Compacted_graph_representation {
     }
 
     int32_t size() { return small_graph->size(); }
+
+    std::vector<double> centrality_for_original_graph(
+        const std::vector<double> centrality_for_small_graph) {
+        for (int32_t s = 0; s < whole_graph.size(); s++) {
+            if (!removed[s]) {
+                CB[s] += centrality_for_small_graph[id_in_small_graph[s]];
+            }
+        }
+        return CB;
+    }
 };

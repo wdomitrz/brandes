@@ -4,7 +4,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "brandes-old.hpp"
+#include "brandes.hpp"
 #include "errors.hpp"
 
 #define THREADS 1024
@@ -16,7 +16,8 @@ __global__ void brandes_kernel(const int32_t n,
                                int32_t* sigma, int32_t* d, double* delta);
 
 void brandes(const int32_t n, const int32_t starting_positions[],
-             const int32_t compact_graph[], double CB[]) {
+             const int32_t compact_graph[], const int32_t reach[],
+             double CB[]) {
     int32_t *starting_positions_dev, *compact_graph_dev, *sigma, *d;
     double *delta, *CB_dev;
     HANDLE_ERROR(
