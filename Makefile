@@ -9,16 +9,16 @@ CUDA_COMPILER_OPTIONS := $(foreach option, $(COMPILER_OPTIONS), --compiler-optio
 brandes:
 	echo "asd"
 
-brandes-par-vert-comp: src/brandes.cu src/brandes.hpp src/brandes-par-vert-comp.cu
+brandes-par-vert-comp: src/brandes.cu src/brandes.hpp src/sizes.hpp src/brandes-par-vert-comp.cu
 	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes.cu src/brandes-par-vert-comp.cu -arch=sm_61
 
-brandes-par-vert-queue: src/brandes-old.cu src/brandes-old.hpp src/brandes-par-vert-queue.cu
+brandes-par-vert-queue: src/brandes-old.cu src/brandes-old.hpp src/sizes.hpp src/brandes-par-vert-queue.cu
 	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes-old.cu src/brandes-par-vert-queue.cu -arch=sm_61
 
-brandes-par-edge: src/brandes-old.cu src/brandes-old.hpp src/brandes-par-edge.cu
+brandes-par-edge: src/brandes-old.cu src/brandes-old.hpp src/sizes.hpp src/brandes-par-edge.cu
 	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes-old.cu src/brandes-par-edge.cu -arch=sm_61
 
-brandes-par-vert: src/brandes-old.cu src/brandes-old.hpp src/brandes-par-vert.cu
+brandes-par-vert: src/brandes-old.cu src/brandes-old.hpp src/sizes.hpp src/brandes-par-vert.cu
 	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes-old.cu src/brandes-par-vert.cu -arch=sm_61
 
 brandes-seq-array: src/brandes.cpp src/brandes-old.hpp
