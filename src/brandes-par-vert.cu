@@ -6,7 +6,6 @@
 
 #include "brandes-old.hpp"
 #include "errors.hpp"
-
 #include "sizes.hpp"
 
 __global__ void brandes_kernel(const int32_t n,

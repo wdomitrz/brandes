@@ -6,9 +6,7 @@
 
 #include "brandes-old.hpp"
 #include "errors.hpp"
-
-#define THREADS 1024
-#define BLOCKS (1024 * 2 + 512)
+#include "sizes.hpp"
 
 __global__ void brandes_kernel(const int32_t n,
                                const int32_t starting_positions[],

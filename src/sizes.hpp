@@ -1,2 +1,2 @@
-#define THREADS 512
+#define THREADS 1024
 #define BLOCKS 512
