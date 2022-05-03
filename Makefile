@@ -9,6 +9,9 @@ CUDA_COMPILER_OPTIONS := $(foreach option, $(COMPILER_OPTIONS), --compiler-optio
 brandes:
 	echo "asd"
 
+brandes-par-vert-queue-comp: src/brandes.cu src/brandes.hpp src/sizes.hpp src/brandes-par-vert-queue-comp.cu
+	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes.cu src/brandes-par-vert-queue-comp.cu -arch=sm_61
+
 brandes-par-edge-comp: src/brandes.cu src/brandes.hpp src/sizes.hpp src/brandes-par-edge-comp.cu
 	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes.cu src/brandes-par-edge-comp.cu -arch=sm_61
 
