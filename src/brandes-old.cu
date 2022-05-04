@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 
     int32_t node_1, node_2;
     while (in_file >> node_1 >> node_2) {
-        edges.push_back(std::make_pair(node_1, node_2));
+        if (node_1 < node_2) edges.emplace_back(node_1, node_2);
     }
 
     Compact_graph_representation graph(edges);
