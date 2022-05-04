@@ -216,7 +216,7 @@ class Compacted_graph_representation {
 };
 
 class Virtualized_compacted_graph_representation {
-   private:
+   protected:
     const int32_t mdeg;
     Compacted_graph_representation orig_graph;
     std::vector<int32_t> vmap;
@@ -258,4 +258,38 @@ class Virtualized_compacted_graph_representation {
         return orig_graph.centrality_for_original_graph(
             centrality_for_small_graph);
     }
+};
+
+class Virtualized_compacted_graph_representation_with_stride
+    : public Virtualized_compacted_graph_representation {
+   private:
+    std::vector<int32_t> jmp;
+
+   public:
+    Virtualized_compacted_graph_representation_with_stride(
+        Compacted_graph_representation orig_graph, int32_t mdeg)
+        : Virtualized_compacted_graph_representation(orig_graph, mdeg) {
+        vmap.resize(0);
+        vptrs.resize(0);
+        for (int32_t u = 0; u < orig_graph.size(); u++) {
+            const int32_t deg =
+                orig_graph.get_starting_positions_of_nodes()[u + 1] -
+                orig_graph.get_starting_positions_of_nodes()[u];
+            if (deg == 0) {
+                jmp.push_back(0);
+            } else {
+                jmp.push_back(1 + (deg - 1) / mdeg);
+            }
+            for (int32_t i = orig_graph.get_starting_positions_of_nodes()[u],
+                         j = 0;
+                 j < jmp[u]; i++, j++) {
+                vmap.push_back(u);
+                vptrs.push_back(i);
+            }
+        }
+        vptrs.push_back(
+            orig_graph.get_starting_positions_of_nodes()[orig_graph.size()]);
+    }
+
+    inline const int32_t* get_jmp() { return jmp.data(); }
 };

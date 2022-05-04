@@ -7,7 +7,7 @@ G++_COMPILER_OPTIONS := -Wall -Wextra -Wpedantic -O3
 CUDA_COMPILER_OPTIONS := $(foreach option, $(COMPILER_OPTIONS), --compiler-options $(option))
 
 brandes:
-	echo brandes-par-vert-comp-virt-stride
+	echo "brandes-par-vert-comp-virt-stride"
 
 brandes-par-vert-comp-virt-stride: src/brandes-virt-stride.cu src/brandes-virt-stride.hpp src/sizes.hpp src/brandes-par-vert-comp-virt-stride.cu src/compact_graph_representation.hpp
 	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes-virt-stride.cu src/brandes-par-vert-comp-virt-stride.cu -arch=sm_61

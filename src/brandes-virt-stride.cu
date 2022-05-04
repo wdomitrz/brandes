@@ -25,7 +25,8 @@ int main(int argc, char *argv[]) {
 
     Compact_graph_representation whole_graph(edges);
     Compacted_graph_representation graph(whole_graph);
-    Virtualized_compacted_graph_representation virt_graph(graph, MDEG);
+    Virtualized_compacted_graph_representation_with_stride virt_graph(graph,
+                                                                      MDEG);
 
     int32_t n = virt_graph.orig_size(), virt_n = virt_graph.size();
     const int32_t *compact_graph = virt_graph.get_compact_graph();
@@ -34,10 +35,11 @@ int main(int argc, char *argv[]) {
     const int32_t *reach = virt_graph.get_reach();
     const int32_t *vmap = virt_graph.get_vmap();
     const int32_t *vptrs = virt_graph.get_vptrs();
+    const int32_t *jmp = virt_graph.get_jmp();
 
     std::vector<double> res_small(n, 0);
     brandes(n, virt_n, starting_positions, compact_graph, reach, vmap, vptrs,
-            res_small.data());
+            jmp, res_small.data());
     std::vector<double> res = graph.centrality_for_original_graph(res_small);
 
     std::ofstream out_file(out_file_name);

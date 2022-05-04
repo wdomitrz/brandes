@@ -1,4 +1,4 @@
-for t in brandes-seq brandes-seq-vector brandes-seq-array brandes-par-vert brandes-par-edge brandes-par-vert-queue brandes-par-vert-comp brandes-par-edge-comp brandes-par-vert-queue-comp brandes-par-vert-comp-virt; do
+for t in brandes-seq brandes-seq-vector brandes-seq-array brandes-par-vert brandes-par-edge brandes-par-vert-queue brandes-par-vert-comp brandes-par-edge-comp brandes-par-vert-queue-comp brandes-par-vert-comp-virt brandes-par-vert-comp-virt-stride; do
     echo $t
     rm -f ./brandes
     make $t
