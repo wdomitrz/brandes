@@ -6,7 +6,7 @@
 
 #include "brandes-virt.hpp"
 #include "errors.hpp"
-#include "sizes.hpp"
+//#include "sizes.hpp"
 
 __global__ void brandes_kernel(const int32_t n, const int32_t virt_n,
                                const int32_t starting_positions[],

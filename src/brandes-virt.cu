@@ -6,7 +6,7 @@
 
 #include "brandes-virt.hpp"
 #include "compact_graph_representation.hpp"
-#include "sizes.hpp"
+//#include "sizes.hpp"
 
 int main(int argc, char *argv[]) {
     if (argc != 3) {
