@@ -172,7 +172,7 @@ class Compacted_graph_representation {
                  i < whole_graph.get_starting_positions_of_nodes()[u + 1];
                  i++) {
                 const int32_t v = whole_graph.get_compact_graph()[i];
-                if (!removed[u] && !removed[v]) {
+                if (u < v && !removed[u] && !removed[v]) {
                     compacted_edges.emplace_back(id_in_small_graph[u],
                                                  id_in_small_graph[v]);
                 }

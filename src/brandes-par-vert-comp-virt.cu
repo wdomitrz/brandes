@@ -25,11 +25,12 @@ void brandes(const int32_t n, const int32_t virt_n,
     double *delta, *CB_dev;
     HANDLE_ERROR(
         cudaMalloc((void**)&starting_positions_dev, sizeof(int32_t) * (n + 1)));
+    HANDLE_ERROR(cudaMalloc((void**)&reach_dev, sizeof(int32_t) * n));
     HANDLE_ERROR(cudaMalloc((void**)&compact_graph_dev,
                             sizeof(int32_t) * starting_positions[n]));
-    HANDLE_ERROR(cudaMalloc((void**)&reach_dev, sizeof(int32_t) * n));
     HANDLE_ERROR(cudaMalloc((void**)&vmap_dev, sizeof(int32_t) * virt_n));
-    HANDLE_ERROR(cudaMalloc((void**)&vptrs_dev, sizeof(int32_t) * virt_n));
+    HANDLE_ERROR(
+        cudaMalloc((void**)&vptrs_dev, sizeof(int32_t) * (virt_n + 1)));
     HANDLE_ERROR(cudaMalloc((void**)&CB_dev, sizeof(double) * n));
     HANDLE_ERROR(cudaMalloc((void**)&sigma, sizeof(int32_t) * n * BLOCKS));
     HANDLE_ERROR(cudaMalloc((void**)&d, sizeof(int32_t) * n * BLOCKS));
@@ -40,7 +41,7 @@ void brandes(const int32_t n, const int32_t virt_n,
                             cudaMemcpyHostToDevice));
     HANDLE_ERROR(cudaMemcpy(vmap_dev, vmap, sizeof(int32_t) * virt_n,
                             cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(vptrs_dev, vptrs, sizeof(int32_t) * virt_n,
+    HANDLE_ERROR(cudaMemcpy(vptrs_dev, vptrs, sizeof(int32_t) * (virt_n + 1),
                             cudaMemcpyHostToDevice));
     HANDLE_ERROR(cudaMemcpy(compact_graph_dev, compact_graph,
                             sizeof(int32_t) * starting_positions[n],
@@ -137,8 +138,8 @@ __global__ void brandes_kernel(const int32_t n, const int32_t virt_n,
                 const int32_t u = vmap[u_virt];
                 if (d[u] == l) {
                     double sum = 0;
-                    const int32_t end = vptrs[u + 1];
-                    for (int32_t i = vptrs[u]; i < end; i++) {
+                    const int32_t end = vptrs[u_virt + 1];
+                    for (int32_t i = vptrs[u_virt]; i < end; i++) {
                         const int32_t v = compact_graph[i];
                         if (d[v] == l + 1) {
                             sum +=
