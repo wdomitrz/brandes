@@ -8,6 +8,24 @@
 #include "errors.hpp"
 #include "sizes.hpp"
 
+#define allign_up_to_ALLIGN
+#define allign_up_to_ALLIGN_dev
+// #define ALLIGN 32
+
+// inline size_t allign_up_to_ALLIGN_dev(size_t x) {
+//     if (x % ALLIGN == 0)
+//         return x;
+//     else
+//         return (x + (x - (x % ALLIGN)));
+// }
+
+// __device__ inline size_t allign_up_to_ALLIGN_dev(size_t x) {
+//     if (x % ALLIGN == 0)
+//         return x;
+//     else
+//         return (x + (x - (x % ALLIGN)));
+// }
+
 __global__ void brandes_kernel(const int32_t n, const int32_t virt_n,
                                const int32_t starting_positions[],
                                const int32_t compact_graph[],
@@ -75,15 +93,20 @@ __global__ void brandes_kernel(const int32_t n, const int32_t virt_n,
                                const int32_t vptrs[], const int32_t jmp[],
                                double CB[], int32_t* sigma_global,
                                int32_t* d_global, double* delta_global) {
+    // const int32_t big_step = 1 + (n - 1) / blockDim.x;
+    // const int32_t my_start = threadIdx. * big_step;
+    // const int32_t my_end = min(n, (threadIdx.x + 1) * big_step);
+    // const int32_t my_step = 1;
     const int32_t my_start = threadIdx.x;
     const int32_t my_end = n;
+    const int32_t my_end_virt = virt_n;
     const int32_t my_step = blockDim.x;
     __shared__ bool cont;
     __shared__ int32_t l;
     __shared__ int32_t* sigma;
     __shared__ int32_t* d;
     __shared__ double* delta;
-    if (threadIdx.x == 0) {
+    if (my_start == 0) {
         sigma = &sigma_global[n * blockIdx.x];
         d = &d_global[n * blockIdx.x];
         delta = &delta_global[n * blockIdx.x];
@@ -92,7 +115,7 @@ __global__ void brandes_kernel(const int32_t n, const int32_t virt_n,
         for (int i = my_start; i < my_end; i += my_step) {
             CB[i] = 0;
         }
-    for (int32_t s = blockIdx.x; s < n; s += gridDim.x) {
+    for (int32_t s = blockIdx.x; s < my_end; s += gridDim.x) {
         __syncthreads();
         for (int i = my_start; i < my_end; i += my_step) {
             sigma[i] = 0;
@@ -111,7 +134,7 @@ __global__ void brandes_kernel(const int32_t n, const int32_t virt_n,
             __syncthreads();
             cont = false;
             __syncthreads();
-            for (int32_t u_virt = my_start; u_virt < virt_n;
+            for (int32_t u_virt = my_start; u_virt < my_end_virt;
                  u_virt += my_step) {
                 const int32_t u = vmap[u_virt];
                 if (d[u] == l) {
@@ -130,16 +153,16 @@ __global__ void brandes_kernel(const int32_t n, const int32_t virt_n,
                 }
             }
             __syncthreads();
-            if (threadIdx.x == 0) {
+            if (my_start == 0) {
                 l++;
             }
         }
         __syncthreads();
         while (l > 1) {
             __syncthreads();
-            if (threadIdx.x == 0) l--;
+            if (my_start == 0) l--;
             __syncthreads();
-            for (int32_t u_virt = my_start; u_virt < virt_n;
+            for (int32_t u_virt = my_start; u_virt < my_end_virt;
                  u_virt += my_step) {
                 const int32_t u = vmap[u_virt];
                 if (d[u] == l) {

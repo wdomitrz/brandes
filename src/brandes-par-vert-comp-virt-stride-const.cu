@@ -27,6 +27,7 @@ void brandes(const int32_t host_n, const int32_t host_virt_n,
     double *delta, *CB_dev;
     HANDLE_ERROR(cudaMemcpyToSymbol(n, &host_n, sizeof(int32_t)));
     HANDLE_ERROR(cudaMemcpyToSymbol(virt_n, &host_virt_n, sizeof(int32_t)));
+
     HANDLE_ERROR(cudaMalloc((void**)&starting_positions_dev,
                             sizeof(int32_t) * (host_n + 1)));
     HANDLE_ERROR(cudaMalloc((void**)&reach_dev, sizeof(int32_t) * host_n));
@@ -79,9 +80,9 @@ __global__ void brandes_kernel(const int32_t starting_positions[],
                                const int32_t vptrs[], const int32_t jmp[],
                                double CB[], int32_t* sigma_global,
                                int32_t* d_global, double* delta_global) {
-    const int32_t my_start = threadIdx.x;
-    const int32_t my_end = n;
-    const int32_t my_step = blockDim.x;
+    // const int32_t my_start = threadIdx.x;
+    // const int32_t my_end = n;
+    // const int32_t my_step = blockDim.x;
     __shared__ bool cont;
     __shared__ int32_t l;
     __shared__ int32_t* sigma;
@@ -93,18 +94,18 @@ __global__ void brandes_kernel(const int32_t starting_positions[],
         delta = &delta_global[n * blockIdx.x];
     }
     if (blockIdx.x == 0)
-        for (int i = my_start; i < my_end; i += my_step) {
+        for (int i = threadIdx.x; i < n; i += blockDim.x) {
             CB[i] = 0;
         }
     for (int32_t s = blockIdx.x; s < n; s += gridDim.x) {
         __syncthreads();
-        for (int i = my_start; i < my_end; i += my_step) {
+        for (int i = threadIdx.x; i < n; i += blockDim.x) {
             sigma[i] = 0;
             d[i] = -1;
             delta[i] = reach[i];
         }
         __syncthreads();
-        if (my_start == 0) {
+        if (threadIdx.x == 0) {
             sigma[s] = 1;
             d[s] = 0;
             cont = true;
@@ -115,8 +116,8 @@ __global__ void brandes_kernel(const int32_t starting_positions[],
             __syncthreads();
             cont = false;
             __syncthreads();
-            for (int32_t u_virt = my_start; u_virt < virt_n;
-                 u_virt += my_step) {
+            for (int32_t u_virt = threadIdx.x; u_virt < virt_n;
+                 u_virt += blockDim.x) {
                 const int32_t u = vmap[u_virt];
                 if (d[u] == l) {
                     const int32_t end = starting_positions[u + 1];
@@ -143,8 +144,8 @@ __global__ void brandes_kernel(const int32_t starting_positions[],
             __syncthreads();
             if (threadIdx.x == 0) l--;
             __syncthreads();
-            for (int32_t u_virt = my_start; u_virt < virt_n;
-                 u_virt += my_step) {
+            for (int32_t u_virt = threadIdx.x; u_virt < virt_n;
+                 u_virt += blockDim.x) {
                 const int32_t u = vmap[u_virt];
                 if (d[u] == l) {
                     double sum = 0;
@@ -162,7 +163,7 @@ __global__ void brandes_kernel(const int32_t starting_positions[],
             }
         }
         __syncthreads();
-        for (int32_t v = my_start; v < my_end; v += my_step) {
+        for (int32_t v = threadIdx.x; v < n; v += blockDim.x) {
             if (v != s) {
                 atomicAdd(&CB[v],
                           (double)reach[s] * (delta[v] - (double)reach[v]));
