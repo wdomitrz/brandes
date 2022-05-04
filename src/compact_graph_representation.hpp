@@ -165,44 +165,44 @@ class Compacted_graph_representation {
         }
     }
 
-    std::vector<std::pair<int32_t, int32_t>> get_compacted_edges(
-        const std::vector<std::pair<int32_t, int32_t>>& edges) {
+    std::vector<std::pair<int32_t, int32_t>> get_compacted_edges() {
         std::vector<std::pair<int32_t, int32_t>> compacted_edges;
-        for (const auto& node_1_node_2 : edges) {
-            if (!removed[node_1_node_2.first] &&
-                !removed[node_1_node_2.second]) {
-                compacted_edges.emplace_back(
-                    id_in_small_graph[node_1_node_2.first],
-                    id_in_small_graph[node_1_node_2.second]);
+        for (int32_t u = 0; u < whole_graph.size(); u++) {
+            for (int32_t i = whole_graph.get_starting_positions_of_nodes()[u];
+                 i < whole_graph.get_starting_positions_of_nodes()[u + 1];
+                 i++) {
+                const int32_t v = whole_graph.get_compact_graph()[i];
+                if (!removed[u] && !removed[v]) {
+                    compacted_edges.emplace_back(id_in_small_graph[u],
+                                                 id_in_small_graph[v]);
+                }
             }
         }
         return compacted_edges;
     }
 
    public:
-    Compacted_graph_representation(
-        const std::vector<std::pair<int32_t, int32_t>>& edges)
-        : whole_graph(edges) {
+    Compacted_graph_representation(Compact_graph_representation whole_graph)
+        : whole_graph(whole_graph) {
         initialize_degrees();
         initialize_connected_component_size();
         remove_nodes();
         compute_ids_and_compacted_reach();
-        small_graph =
-            new Compact_graph_representation(get_compacted_edges(edges));
+        small_graph = new Compact_graph_representation(get_compacted_edges());
     }
-    const int32_t* get_reach() { return reach_compacted.data(); }
-    const Compact_graph_representation get_whole_compace() {
+    inline const int32_t* get_reach() { return reach_compacted.data(); }
+    inline const Compact_graph_representation get_whole_compace() {
         return whole_graph;
     }
-    const int32_t* get_starting_positions_of_nodes() {
+    inline const int32_t* get_starting_positions_of_nodes() {
         return small_graph->get_starting_positions_of_nodes();
     }
 
-    const int32_t* get_compact_graph() {
+    inline const int32_t* get_compact_graph() {
         return small_graph->get_compact_graph();
     }
 
-    int32_t size() { return small_graph->size(); }
+    inline int32_t size() { return small_graph->size(); }
 
     std::vector<double> centrality_for_original_graph(
         const std::vector<double> centrality_for_small_graph) {
@@ -212,5 +212,50 @@ class Compacted_graph_representation {
             }
         }
         return CB;
+    }
+};
+
+class Virtualized_compacted_graph_representation {
+   private:
+    const int32_t mdeg;
+    Compacted_graph_representation orig_graph;
+    std::vector<int32_t> vmap;
+    std::vector<int32_t> vptrs;
+
+   public:
+    Virtualized_compacted_graph_representation(
+        Compacted_graph_representation orig_graph, int32_t mdeg)
+        : mdeg(mdeg), orig_graph(orig_graph) {
+        for (int32_t u = 0; u < orig_graph.size(); u++) {
+            int32_t how_many_vectices_for_last_node = mdeg;
+            for (int32_t i = orig_graph.get_starting_positions_of_nodes()[u];
+                 i < orig_graph.get_starting_positions_of_nodes()[u + 1]; i++) {
+                if (how_many_vectices_for_last_node == mdeg) {
+                    how_many_vectices_for_last_node = 0;
+                    vmap.push_back(u);
+                    vptrs.push_back(i);
+                }
+                how_many_vectices_for_last_node++;
+            }
+        }
+        vptrs.push_back(
+            orig_graph.get_starting_positions_of_nodes()[orig_graph.size()]);
+    }
+
+    inline const int32_t* get_compact_graph() {
+        return orig_graph.get_compact_graph();
+    }
+    inline int32_t size() { return vmap.size(); }
+    inline int32_t orig_size() { return orig_graph.size(); }
+    inline const int32_t* get_vmap() { return vmap.data(); }
+    inline const int32_t* get_vptrs() { return vptrs.data(); }
+    inline const int32_t* get_reach() { return orig_graph.get_reach(); }
+    inline const int32_t* get_starting_positions_of_nodes() {
+        return orig_graph.get_starting_positions_of_nodes();
+    }
+    std::vector<double> centrality_for_original_graph(
+        const std::vector<double> centrality_for_small_graph) {
+        return orig_graph.centrality_for_original_graph(
+            centrality_for_small_graph);
     }
 };
