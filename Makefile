@@ -9,8 +9,8 @@ CUDA_COMPILER_OPTIONS := -O3 -gencode=arch=compute_70,code=sm_70 $(foreach optio
 brandes:
 	echo "brandes-par-vert-comp-virt-stride"
 
-brandes-par-vert-virt-stride: src/brandes-virt-stride-nocomp.cu src/brandes-virt-stride-nocomp.hpp src/sizes.hpp src/brandes-par-vert-virt-stride.cu src/compact_graph_representation.hpp
-	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes-virt-stride.cu src/brandes-par-vert-virt-stride.cu
+brandes-par-vert-virt: src/brandes-virt-nocomp.cu src/brandes-virt-nocomp.hpp src/sizes.hpp src/brandes-par-vert-virt.cu src/compact_graph_representation.hpp
+	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes-virt-nocomp.cu src/brandes-par-vert-virt.cu
 
 brandes-par-vert-comp-virt-stride: src/brandes-virt-stride.cu src/brandes-virt-stride.hpp src/sizes.hpp src/brandes-par-vert-comp-virt-stride.cu src/compact_graph_representation.hpp
 	nvcc $(CUDA_COMPILER_OPTIONS) -o brandes src/brandes-virt-stride.cu src/brandes-par-vert-comp-virt-stride.cu
