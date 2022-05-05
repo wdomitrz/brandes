@@ -24,8 +24,8 @@ int main(int argc, char *argv[]) {
     }
 
     Compact_graph_representation whole_graph(edges);
-    Virtualized_graph_representation_parametric<Compact_graph_representation>
-        virt_graph(whole_graph, MDEG);
+    Virtualized_graph_representation<Compact_graph_representation> virt_graph(
+        whole_graph, MDEG);
 
     int32_t n = virt_graph.orig_size(), virt_n = virt_graph.size();
     const int32_t *compact_graph = virt_graph.get_compact_graph();

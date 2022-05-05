@@ -220,7 +220,7 @@ class Compacted_graph_representation {
 };
 
 template <typename Graph_class>
-class Virtualized_graph_representation_parametric {
+class Virtualized_graph_representation {
    protected:
     const int32_t mdeg;
     Graph_class orig_graph;
@@ -228,7 +228,7 @@ class Virtualized_graph_representation_parametric {
     std::vector<int32_t> vptrs;
 
    public:
-    Virtualized_graph_representation_parametric(Graph_class graph, int32_t mdeg)
+    Virtualized_graph_representation(Graph_class graph, int32_t mdeg)
         : mdeg(mdeg), orig_graph(graph) {
         vmap.resize(0);
         vptrs.resize(0);
@@ -258,90 +258,69 @@ class Virtualized_graph_representation_parametric {
     inline const int32_t* get_starting_positions_of_nodes() {
         return orig_graph.get_starting_positions_of_nodes();
     }
+
+    inline const int32_t* get_reach();
+    std::vector<double> centrality_for_original_graph(
+        const std::vector<double> centrality_for_small_graph);
 };
 
+template <>
+inline const int32_t*
+Virtualized_graph_representation<Compacted_graph_representation>::get_reach() {
+    return orig_graph.get_reach();
+}
+
+template <>
+std::vector<double>
+Virtualized_graph_representation<Compacted_graph_representation>::
+    centrality_for_original_graph(
+        const std::vector<double> centrality_for_small_graph) {
+    return orig_graph.centrality_for_original_graph(centrality_for_small_graph);
+}
+
 template <typename Graph_class>
-class Virtualized_graph_representation_with_stride_parametric
-    : public Virtualized_graph_representation_parametric<Graph_class> {
+class Virtualized_graph_representation_with_stride
+    : public Virtualized_graph_representation<Graph_class> {
    protected:
     std::vector<int32_t> jmp;
 
    public:
-    Virtualized_graph_representation_with_stride_parametric(Graph_class graph,
-                                                            int32_t mdeg)
-        : Virtualized_graph_representation_parametric<Graph_class>(graph,
-                                                                   mdeg) {
-        Virtualized_graph_representation_parametric<Graph_class>::vmap.resize(
-            0);
-        Virtualized_graph_representation_parametric<Graph_class>::vptrs.resize(
-            0);
-        for (int32_t u = 0; u < Virtualized_graph_representation_parametric<
-                                    Graph_class>::orig_graph.size();
+    Virtualized_graph_representation_with_stride(Graph_class graph,
+                                                 int32_t mdeg)
+        : Virtualized_graph_representation<Graph_class>(graph, mdeg) {
+        Virtualized_graph_representation<Graph_class>::vmap.resize(0);
+        Virtualized_graph_representation<Graph_class>::vptrs.resize(0);
+        for (int32_t u = 0;
+             u <
+             Virtualized_graph_representation<Graph_class>::orig_graph.size();
              u++) {
             const int32_t deg =
-                Virtualized_graph_representation_parametric<Graph_class>::
-                    orig_graph.get_starting_positions_of_nodes()[u + 1] -
-                Virtualized_graph_representation_parametric<Graph_class>::
-                    orig_graph.get_starting_positions_of_nodes()[u];
+                Virtualized_graph_representation<Graph_class>::orig_graph
+                    .get_starting_positions_of_nodes()[u + 1] -
+                Virtualized_graph_representation<Graph_class>::orig_graph
+                    .get_starting_positions_of_nodes()[u];
             if (deg == 0) {
                 jmp.push_back(0);
             } else {
                 jmp.push_back(1 + (deg - 1) / mdeg);
             }
-            for (int32_t i = Virtualized_graph_representation_parametric<
+            for (int32_t i = Virtualized_graph_representation<
                                  Graph_class>::orig_graph
                                  .get_starting_positions_of_nodes()[u],
                          j = 0;
                  j < jmp[u]; i++, j++) {
-                Virtualized_graph_representation_parametric<Graph_class>::vmap
-                    .push_back(u);
-                Virtualized_graph_representation_parametric<Graph_class>::vptrs
-                    .push_back(i);
+                Virtualized_graph_representation<Graph_class>::vmap.push_back(
+                    u);
+                Virtualized_graph_representation<Graph_class>::vptrs.push_back(
+                    i);
             }
         }
-        Virtualized_graph_representation_parametric<Graph_class>::vptrs
-            .push_back(
-                Virtualized_graph_representation_parametric<
-                    Graph_class>::orig_graph.get_starting_positions_of_nodes()
-                    [Virtualized_graph_representation_parametric<
-                         Graph_class>::orig_graph.size()]);
+        Virtualized_graph_representation<Graph_class>::vptrs.push_back(
+            Virtualized_graph_representation<Graph_class>::orig_graph
+                .get_starting_positions_of_nodes()
+                    [Virtualized_graph_representation<Graph_class>::orig_graph
+                         .size()]);
     }
 
     inline const int32_t* get_jmp() { return jmp.data(); }
-};
-
-class Virtualized_compacted_graph_representation
-    : public Virtualized_graph_representation_parametric<
-          Compacted_graph_representation> {
-   public:
-    Virtualized_compacted_graph_representation(
-        Compact_graph_representation graph, int32_t mdeg)
-        : Virtualized_graph_representation_parametric<
-              Compacted_graph_representation>(graph, mdeg) {}
-
-    inline const int32_t* get_reach() { return orig_graph.get_reach(); }
-
-    std::vector<double> centrality_for_original_graph(
-        const std::vector<double> centrality_for_small_graph) {
-        return orig_graph.centrality_for_original_graph(
-            centrality_for_small_graph);
-    }
-};
-
-class Virtualized_compacted_graph_representation_with_stride
-    : public Virtualized_graph_representation_with_stride_parametric<
-          Compacted_graph_representation> {
-   public:
-    Virtualized_compacted_graph_representation_with_stride(
-        Compact_graph_representation graph, int32_t mdeg)
-        : Virtualized_graph_representation_with_stride_parametric<
-              Compacted_graph_representation>(graph, mdeg) {}
-
-    inline const int32_t* get_reach() { return orig_graph.get_reach(); }
-
-    std::vector<double> centrality_for_original_graph(
-        const std::vector<double> centrality_for_small_graph) {
-        return orig_graph.centrality_for_original_graph(
-            centrality_for_small_graph);
-    }
 };
