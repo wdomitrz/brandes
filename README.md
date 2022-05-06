@@ -129,6 +129,10 @@ One might consider move methods of reducing size of the considered graphs, for e
 
 One of the first optimizations coming to mind when migrating from the sequential version of an algorithm to a parallel one, is to use some king of queue implementation to store information which vertices should be accessed in the next *layer of the graph*. One can do it by keeping two arrays -- for the current considered layer and the next considered layer. Unfortunately adding a vertex to such a queue exactly once requires usage of atomic operations and as a result slowing the code down. This is by no means a desired optimization (at least in the way I implemented it).
 
+### Collecting the results later to avoid atomic operations
+
+In `brandes-par-vert-comp-virt-stride.cu` there is an additional kernel `collect_CB`. By using this kernel (and allocating `CB_dev` such that every block would have separate space to write the results to), we could avoid using `atomicAdd` in the final loop, in which we increase `CB`. Although using this solution in fact gave us a tiny speedup, I have decided not to include it in the final solution, as it highly increases the memory usage, which might lead to a problem when dealing with bigger graphs. So this is an optimization, that we might want to include, if we were sure that we won't consider *too large* graphs (that wouldn't fit in the memory).
+
 ### Constant memory
 
 This optimization was Unsuccessful, because we can keep the small number of two constant, globally accessible variables in registers and access them at will. If our graph had more constant parameters, it would be reasonable approach. In my implementation it did not speed up the code, and it made it even slightly slower.
