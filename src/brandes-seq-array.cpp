@@ -38,11 +38,11 @@ void brandes_kernel(const uint32_t n, const uint32_t starting_positions[],
                     const uint32_t compact_graph[], double CB[], uint32_t* S,
                     uint32_t* sigma, uint32_t* d, uint32_t* Q, double* delta,
                     uint32_t* P, uint32_t* P_pos) {
-    for (int i = 0; i < n; i++) {
+    for (uint32_t i = 0; i < n; i++) {
         CB[i] = 0.0;
     }
     for (uint32_t s = 0; s < n; s++) {
-        for (int i = 0; i < n; i++) {
+        for (uint32_t i = 0; i < n; i++) {
             sigma[i] = 0;
             d[i] = UINT32_MAX;
             delta[i] = 0.0;

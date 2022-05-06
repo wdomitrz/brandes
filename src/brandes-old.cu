@@ -29,8 +29,8 @@ int main(int argc, char *argv[]) {
     const uint32_t *starting_positions =
         graph.get_starting_positions_of_nodes();
 
-    for (int i = 0; i < n; i++) {
-        for (int j = starting_positions[i]; j < starting_positions[i + 1];
+    for (uint32_t i = 0; i < n; i++) {
+        for (uint32_t j = starting_positions[i]; j < starting_positions[i + 1];
              j++) {
         }
     }

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-for THREADS in 1024 768 512 384 256 128; do
-    for BLOCKS in 2048 1024 3072 512 3584; do
-        for MDEG in 3 4 6 8 10 12 14 16; do
+for THREADS in 1024 ; do
+    for BLOCKS in 2048 1024 512 128 64 32 12 10 8; do
+        for MDEG in 4 5 6 7 8 9 10 11 12; do
             echo $THREADS $BLOCKS $MDEG
             rm -f ./brandes
             echo $THREADS $BLOCKS $MDEG >times/meas-$THREADS-$BLOCKS-$MDEG.out

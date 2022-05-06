@@ -96,12 +96,12 @@ __global__ void brandes_kernel(const uint32_t starting_positions[],
         delta = &delta_global[n * blockIdx.x];
     }
     if (blockIdx.x == 0)
-        for (int i = threadIdx.x; i < n; i += blockDim.x) {
+        for (uint32_t i = threadIdx.x; i < n; i += blockDim.x) {
             CB[i] = 0;
         }
     for (uint32_t s = blockIdx.x; s < n; s += gridDim.x) {
         __syncthreads();
-        for (int i = threadIdx.x; i < n; i += blockDim.x) {
+        for (uint32_t i = threadIdx.x; i < n; i += blockDim.x) {
             sigma[i] = 0;
             d[i] = UINT32_MAX;
             delta[i] = reach[i];
