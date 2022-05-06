@@ -1,7 +1,6 @@
 ---
-title: Brandes algorithm implemented on GPU
+title: Brandes algorithm on GPU
 author: Witalis Domitrz
-date: today
 ---
 
 ## Comment on hiperparameters
