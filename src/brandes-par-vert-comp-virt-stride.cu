@@ -34,10 +34,13 @@ __global__ void brandes_kernel(const uint32_t n, const uint32_t virt_n,
                                double CB[], uint32_t* sigma, uint32_t* d,
                                double* delta);
 
-__global__ void collect_CB(const uint32_t n, double CB[], const uint32_t end) {
-    for (uint32_t which = blockIdx.x * blockDim.x + threadIdx.x, which < n;
-         which += blockDim.x * gridDim.x)
-        for (uint32_t i = 1; i < end; i++) CB[which] += CB[which + n * i];
+__global__ void collect_CB(const size_t n, double CB[], const size_t end) {
+    for (size_t which = blockIdx.x * blockDim.x + threadIdx.x; which < n;
+         which += blockDim.x * gridDim.x) {
+        for (size_t i = 1; i < end; i++) {
+            CB[which] += CB[which + n * i];
+        }
+    }
 }
 
 void brandes(const uint32_t n, const uint32_t virt_n,
@@ -95,9 +98,9 @@ void brandes(const uint32_t n, const uint32_t virt_n,
     brandes_kernel<<<BLOCKS, THREADS, 0, 0>>>(
         n, virt_n, starting_positions_dev, compact_graph_dev, reach_dev,
         vmap_dev, vptrs_dev, jmp_dev, CB_dev, sigma, d, delta);
-    collect_CB<<<BLOCKS, THREADS, 0, 0>>>(n, CB_dev, THREADS, BLOCKS);
     HANDLE_ERROR(cudaEventRecord(stop_kernel, 0));
     HANDLE_ERROR(cudaEventSynchronize(stop_kernel));
+    collect_CB<<<BLOCKS, THREADS, 0, 0>>>(n, CB_dev, BLOCKS);
     HANDLE_ERROR(
         cudaMemcpy(CB, CB_dev, sizeof(double) * n, cudaMemcpyDeviceToHost));
 
@@ -156,6 +159,7 @@ __global__ void brandes_kernel(const uint32_t n, const uint32_t virt_n,
         delta = &delta_global[n * blockIdx.x];
         CB = &CB_global[n * blockIdx.x];
     }
+    __syncthreads();
     for (uint32_t i = my_start; i < my_end; i += my_step) {
         CB[i] = 0;
     }
