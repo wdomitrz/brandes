@@ -61,3 +61,6 @@ test-clean:
 
 test:
 	cd .. ; python3 verifyprograms.py
+
+readme:
+	pandoc README.md -o README.pdf

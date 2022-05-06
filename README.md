@@ -92,9 +92,15 @@ One might see artifacts of other tested version of memory acces in `brandes-par-
 While it didn't give a significant speedup (as it is not the bootleneck of the slow part of the algorithm), I use streams to copy the memory to the GPU in parallel (which gave me a small speedup).
 
 ### Bulk allocation of memory
+When I allocate a significant ammoung of memory (for *coarse-grained parallelism*), I do in one allocation, in a block. A slover version of it would be to allocate an array of pointers, and for each such pointer allocate an array (so basically create a 2d array by allocating each 2d array separaterlly) -- that would be slower.
 
-### A reasonable thing to do, but that is not what the problem is about
-# TODO!!!
+## A reasonable things to do, but that is not what the problem is about
+
+### Running on GPU only when it is reasonable
+We should point out that running the kernel is pointless for small graphs, so, if we were to create a reasonable programme to handle both small graphs and graphs of significant size, we should add a size threshoud for which the graphs would be processed on CPU only. That woudl mean that while running the programme on small graph, we would use CPU implementation and do not test the GPU one. I beleive it is not the point of this problem at all.
+
+### Further graph reductions
+One might consider move methods of reducing size of the considered graphs, for example we should notice that if some vertex has a degree 2, and their both neighbours are connected, then no shortest path will go though this vertex. We could remove all such vertices. This wouldn't impve the performance significanlty, but we can combine this method to compactify the graph with removing the vertices of degree 1, and as a result, get a meaningful redution of the graph.
 
 ## Unsuccessful optimizations
 
@@ -129,4 +135,7 @@ While in the provided paper it is porposed to remove the vertices of degree 1 on
 * a single CPU core is significantl more powerful than a singe GPU core,
 * we are required to measur the time of the kernel, so computing as much as possible on CPU is free.
 
-## Comparison and discussion
+## Other comments
+
+### Accuracy of the virtualized version
+As in the virtualized version we accumulate the values first to `sum` variable, and then add them to `delta`, in comparsion to non-virtualized versions, when we always add to delta, the results might differ due to limited accuracty of the floating point variables.
