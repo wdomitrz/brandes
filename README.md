@@ -86,11 +86,47 @@ As I use the `fine-grained parallelism` inside each block, we have no need to wa
 ### Strided memory access
 I should also note that the access to the *first endvertex* of each edge is strided and threads in one wrap will try to reac *vmap* array in the same memory area.
 
+One might see artifacts of other tested version of memory acces in `brandes-par-vert-comp-virt-stride.cu` file, with commented-out `// const uint32_t big_step` line (and 3 following commmented lines).
+
 ### Usage of steams
 While it didn't give a significant speedup (as it is not the bootleneck of the slow part of the algorithm), I use streams to copy the memory to the GPU in parallel (which gave me a small speedup).
 
+### Bulk allocation of memory
+
+### A reasonable thing to do, but that is not what the problem is about
+# TODO!!!
+
 ## Unsuccessful optimizations
 
+### Queues
+One of the first optimizations comming to mind when migrating from the sequential vertion of an algorithm to a parallel one, is to use some king of queue implementation to store information which vertices should be accessed in the next *layer of the graph*. One can do it by keeping two arrays -- for the current considered layer and the next considered layer. Unfortunatelly adding a vertex to such a queue exactly once requires usage of atomic operations and as a result slowing the code down. This is by no means a desiderd optimization (at least in the way I implemented it).
+
+### Constant memory
+This optimization was Unsuccessful, because we can keep the small number of two constant, globally accessible variables in registers and access them at will. If our graph had more constant parameters, it would be reasonable approach. In my implementation it did not speed up the code, and it made it even sliglty slower.
+
+### Reasonable balance of CPU and GPU computing
+For that optimization see the next section, as I just did not implement the slower variant at all, so I describe it in different section.
+
 ## Possible, currently pointless, modifications
+Here I discuss some modifications of the code that we would not benefit from, but if having faster GPUs and slower CPUs with fast memory transfer between them, or at least having a grapl of reasonable size already in the memory of GPU, might be a reasobable aproach to think of.
+
+### Computing prefix sums on GPU
+In the implementation of `Compact_graph_representation` class, we obviously need to compute prefix sums. This takes linear time, and could be implemented faster on GPU (as we have already seen during the classes). However, in our case, it would not be an optimization at all because of various reasons
+
+* we still need to process the graph in linear time on CPU,
+* this is not at all the slowest operation that we do,
+* it is linear in terms of the number of vertices (which is most likely smaller than the number of edges),
+* a single CPU core is significantl more powerful than a singe GPU core,
+* we are required to measur the time of the kernel, so computing as much as possible on CPU is free.
+
+### Removing vertices of degree 1 on GPU
+While in the provided paper it is porposed to remove the vertices of degree 1 on GPU, it is not a reasonable thing to do because of various reasone (some of which intersect with the prievous non-optimization)
+
+* while it would not be a significant problem for the considered graphs, to reduce the size of the graph on GPU, we need to transfer the whole original graph to GPU, and if we do it on CPU, we can just transfer the reduced graph. For sparse, tree-like graphs it might be a significant benefit.
+* we still need to process the graph in linear time on CPU,
+* this is not at all the slowest operation that we do,
+* it is linear in terms of maximum of the number of edges and the number of vertices, so it is still fast,
+* a single CPU core is significantl more powerful than a singe GPU core,
+* we are required to measur the time of the kernel, so computing as much as possible on CPU is free.
 
 ## Comparison and discussion
