@@ -38,10 +38,22 @@ void brandes(const int32_t n, const int32_t virt_n,
              const int32_t starting_positions[], const int32_t compact_graph[],
              const int32_t reach[], const int32_t vmap[], const int32_t vptrs[],
              const int32_t jmp[], double CB[]) {
-    if (n == 0 || starting_positions[n] == 0) return;
+    if (n == 0 || starting_positions[n] == 0) {
+        std::cerr << 0 << "\n" << 0 << "\n";
+        return;
+    }
     int32_t *starting_positions_dev, *reach_dev, *compact_graph_dev, *vmap_dev,
         *vptrs_dev, *jmp_dev, *sigma, *d;
     double *delta, *CB_dev;
+    cudaStream_t stream[6];
+    for (size_t i = 0; i < 6; i++) {
+        cudaStreamCreate(&stream[i]);
+    }
+    cudaEvent_t start_kernel, stop_kernel, start_with_memory, stop_with_memory;
+    HANDLE_ERROR(cudaEventCreate(&start_with_memory));
+    HANDLE_ERROR(cudaEventCreate(&start_kernel));
+    HANDLE_ERROR(cudaEventCreate(&stop_kernel));
+    HANDLE_ERROR(cudaEventCreate(&stop_with_memory));
     HANDLE_ERROR(
         cudaMalloc((void**)&starting_positions_dev, sizeof(int32_t) * (n + 1)));
     HANDLE_ERROR(cudaMalloc((void**)&reach_dev, sizeof(int32_t) * n));
@@ -55,25 +67,47 @@ void brandes(const int32_t n, const int32_t virt_n,
     HANDLE_ERROR(cudaMalloc((void**)&sigma, sizeof(int32_t) * n * BLOCKS));
     HANDLE_ERROR(cudaMalloc((void**)&d, sizeof(int32_t) * n * BLOCKS));
     HANDLE_ERROR(cudaMalloc((void**)&delta, sizeof(double) * n * BLOCKS));
-    HANDLE_ERROR(cudaMemcpy(starting_positions_dev, starting_positions,
-                            sizeof(int32_t) * (n + 1), cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(reach_dev, reach, sizeof(int32_t) * n,
-                            cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(vmap_dev, vmap, sizeof(int32_t) * virt_n,
-                            cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(vptrs_dev, vptrs, sizeof(int32_t) * (virt_n + 1),
-                            cudaMemcpyHostToDevice));
-    HANDLE_ERROR(
-        cudaMemcpy(jmp_dev, jmp, sizeof(int32_t) * n, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy(compact_graph_dev, compact_graph,
-                            sizeof(int32_t) * starting_positions[n],
-                            cudaMemcpyHostToDevice));
-    // HANDLE_ERROR(cudaMemset(CB_res, 0.0, sizeof(double) * n));
-    brandes_kernel<<<BLOCKS, THREADS>>>(
+    HANDLE_ERROR(cudaEventRecord(start_with_memory, 0));
+    HANDLE_ERROR(cudaMemcpyAsync(starting_positions_dev, starting_positions,
+                                 sizeof(int32_t) * (n + 1),
+                                 cudaMemcpyHostToDevice, stream[0]));
+    HANDLE_ERROR(cudaMemcpyAsync(reach_dev, reach, sizeof(int32_t) * n,
+                                 cudaMemcpyHostToDevice, stream[1]));
+    HANDLE_ERROR(cudaMemcpyAsync(vmap_dev, vmap, sizeof(int32_t) * virt_n,
+                                 cudaMemcpyHostToDevice, stream[2]));
+    HANDLE_ERROR(cudaMemcpyAsync(vptrs_dev, vptrs,
+                                 sizeof(int32_t) * (virt_n + 1),
+                                 cudaMemcpyHostToDevice, stream[3]));
+    HANDLE_ERROR(cudaMemcpyAsync(jmp_dev, jmp, sizeof(int32_t) * n,
+                                 cudaMemcpyHostToDevice, stream[4]));
+    HANDLE_ERROR(cudaMemcpyAsync(compact_graph_dev, compact_graph,
+                                 sizeof(int32_t) * starting_positions[n],
+                                 cudaMemcpyHostToDevice, stream[5]));
+    HANDLE_ERROR(cudaEventRecord(start_kernel, 0));
+    brandes_kernel<<<BLOCKS, THREADS, 0, 0>>>(
         n, virt_n, starting_positions_dev, compact_graph_dev, reach_dev,
         vmap_dev, vptrs_dev, jmp_dev, CB_dev, sigma, d, delta);
+    HANDLE_ERROR(cudaEventRecord(stop_kernel, 0));
+    HANDLE_ERROR(cudaEventSynchronize(stop_kernel));
     HANDLE_ERROR(
         cudaMemcpy(CB, CB_dev, sizeof(double) * n, cudaMemcpyDeviceToHost));
+
+    HANDLE_ERROR(cudaEventRecord(stop_with_memory, 0));
+    HANDLE_ERROR(cudaEventSynchronize(stop_with_memory));
+
+    float time_kernel, time_with_memory;
+    HANDLE_ERROR(cudaEventElapsedTime(&time_kernel, start_kernel, stop_kernel));
+    HANDLE_ERROR(cudaEventElapsedTime(&time_with_memory, start_with_memory,
+                                      stop_with_memory));
+
+    std::cerr << (unsigned long long)time_kernel << "\n"
+              << (unsigned long long)time_with_memory << "\n";
+
+    HANDLE_ERROR(cudaEventDestroy(start_with_memory));
+    HANDLE_ERROR(cudaEventDestroy(start_kernel));
+    HANDLE_ERROR(cudaEventDestroy(stop_kernel));
+    HANDLE_ERROR(cudaEventDestroy(stop_with_memory));
+
     HANDLE_ERROR(cudaFree(delta));
     HANDLE_ERROR(cudaFree(d));
     HANDLE_ERROR(cudaFree(sigma));
