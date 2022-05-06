@@ -16,9 +16,9 @@ int main(int argc, char *argv[]) {
     }
     const std::string in_file_name(argv[1]), out_file_name(argv[2]);
     std::ifstream in_file(in_file_name);
-    std::vector<std::pair<int32_t, int32_t>> edges;
+    std::vector<std::pair<uint32_t, uint32_t>> edges;
 
-    int32_t node_1, node_2;
+    uint32_t node_1, node_2;
     while (in_file >> node_1 >> node_2) {
         if (node_1 < node_2) edges.emplace_back(node_1, node_2);
     }
@@ -27,13 +27,13 @@ int main(int argc, char *argv[]) {
     Virtualized_graph_representation_with_stride<Compact_graph_representation>
         virt_graph(whole_graph, MDEG);
 
-    int32_t n = virt_graph.orig_size(), virt_n = virt_graph.size();
-    const int32_t *compact_graph = virt_graph.get_compact_graph();
-    const int32_t *starting_positions =
+    uint32_t n = virt_graph.orig_size(), virt_n = virt_graph.size();
+    const uint32_t *compact_graph = virt_graph.get_compact_graph();
+    const uint32_t *starting_positions =
         virt_graph.get_starting_positions_of_nodes();
-    const int32_t *vmap = virt_graph.get_vmap();
-    const int32_t *vptrs = virt_graph.get_vptrs();
-    const int32_t *jmp = virt_graph.get_jmp();
+    const uint32_t *vmap = virt_graph.get_vmap();
+    const uint32_t *vptrs = virt_graph.get_vptrs();
+    const uint32_t *jmp = virt_graph.get_jmp();
 
     std::vector<double> res(n, 0);
     brandes(n, virt_n, starting_positions, compact_graph, vmap, vptrs, jmp,

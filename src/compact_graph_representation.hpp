@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <vector>
 
-using node_id = int32_t;
+using node_id = uint32_t;
 class Compact_graph_representation {
     // With a guardian at the end
     std::vector<node_id> starting_positions_of_nodes;
@@ -69,25 +69,25 @@ class Compact_graph_representation {
 class Compacted_graph_representation {
    private:
     Compact_graph_representation whole_graph;
-    std::vector<int32_t> reach;
-    std::vector<int32_t> deg;
-    std::vector<int32_t> connected_componet_size;
+    std::vector<uint32_t> reach;
+    std::vector<uint32_t> deg;
+    std::vector<uint32_t> connected_componet_size;
     std::vector<double> CB;
     std::vector<bool> removed;
-    std::vector<int32_t> id_in_small_graph;
-    std::vector<int32_t> reach_compacted;
+    std::vector<uint32_t> id_in_small_graph;
+    std::vector<uint32_t> reach_compacted;
     Compact_graph_representation* small_graph;
 
-    void remove(int32_t s) {
-        while (s != -1) {
+    void remove(uint32_t s) {
+        while (s != UINT32_MAX) {
             removed[s] = true;
             if (deg[s] == 0) return;
 
-            int32_t parent = -1;
-            for (int32_t i = whole_graph.get_starting_positions_of_nodes()[s];
+            uint32_t parent = UINT32_MAX;
+            for (uint32_t i = whole_graph.get_starting_positions_of_nodes()[s];
                  i < whole_graph.get_starting_positions_of_nodes()[s + 1];
                  i++) {
-                const int32_t u = whole_graph.get_compact_graph()[i];
+                const uint32_t u = whole_graph.get_compact_graph()[i];
                 if (!removed[u]) {
                     parent = u;
                     break;
@@ -100,33 +100,33 @@ class Compacted_graph_representation {
             if (deg[parent] <= 1) {
                 s = parent;
             } else {
-                s = -1;
+                s = UINT32_MAX;
             }
         }
     }
 
     void initialize_degrees() {
         deg.resize(whole_graph.size(), 0);
-        for (int32_t s = 0; s < whole_graph.size(); s++) {
+        for (uint32_t s = 0; s < whole_graph.size(); s++) {
             deg[s] = whole_graph.get_starting_positions_of_nodes()[s + 1] -
                      whole_graph.get_starting_positions_of_nodes()[s];
         }
     }
-    void push_connected_component_size(int32_t s) {
-        for (int32_t i = whole_graph.get_starting_positions_of_nodes()[s];
+    void push_connected_component_size(uint32_t s) {
+        for (uint32_t i = whole_graph.get_starting_positions_of_nodes()[s];
              i < whole_graph.get_starting_positions_of_nodes()[s + 1]; i++) {
-            const int32_t u = whole_graph.get_compact_graph()[i];
+            const uint32_t u = whole_graph.get_compact_graph()[i];
             if (connected_componet_size[u] != connected_componet_size[s]) {
                 connected_componet_size[u] = connected_componet_size[s];
                 push_connected_component_size(u);
             }
         }
     }
-    int32_t count_connected_component_size_from(int32_t s) {
+    uint32_t count_connected_component_size_from(uint32_t s) {
         connected_componet_size[s] = 1;
-        for (int32_t i = whole_graph.get_starting_positions_of_nodes()[s];
+        for (uint32_t i = whole_graph.get_starting_positions_of_nodes()[s];
              i < whole_graph.get_starting_positions_of_nodes()[s + 1]; i++) {
-            const int32_t u = whole_graph.get_compact_graph()[i];
+            const uint32_t u = whole_graph.get_compact_graph()[i];
             if (connected_componet_size[u] == 0) {
                 connected_componet_size[s] +=
                     count_connected_component_size_from(u);
@@ -136,7 +136,7 @@ class Compacted_graph_representation {
     }
     void initialize_connected_component_size() {
         connected_componet_size.resize(whole_graph.size(), 0);
-        for (int32_t s = 0; s < whole_graph.size(); s++) {
+        for (uint32_t s = 0; s < whole_graph.size(); s++) {
             if (connected_componet_size[s] == 0) {
                 count_connected_component_size_from(s);
                 push_connected_component_size(s);
@@ -147,35 +147,35 @@ class Compacted_graph_representation {
         CB.resize(whole_graph.size(), 0);
         reach.resize(whole_graph.size(), 1);
         removed.resize(whole_graph.size(), false);
-        for (int32_t s = 0; s < whole_graph.size(); s++) {
+        for (uint32_t s = 0; s < whole_graph.size(); s++) {
             if (!removed[s] && deg[s] <= 1) remove(s);
         }
     }
 
     void compute_ids_and_compacted_reach() {
         id_in_small_graph.resize(whole_graph.size());
-        int32_t next_id = 0;
-        for (int32_t s = 0; s < whole_graph.size(); s++) {
+        uint32_t next_id = 0;
+        for (uint32_t s = 0; s < whole_graph.size(); s++) {
             if (!removed[s]) {
                 id_in_small_graph[s] = next_id;
                 next_id++;
             }
         }
         reach_compacted.resize(next_id);
-        for (int32_t s = 0; s < whole_graph.size(); s++) {
+        for (uint32_t s = 0; s < whole_graph.size(); s++) {
             if (!removed[s]) {
                 reach_compacted[id_in_small_graph[s]] = reach[s];
             }
         }
     }
 
-    std::vector<std::pair<int32_t, int32_t>> get_compacted_edges() {
-        std::vector<std::pair<int32_t, int32_t>> compacted_edges;
-        for (int32_t u = 0; u < whole_graph.size(); u++) {
-            for (int32_t i = whole_graph.get_starting_positions_of_nodes()[u];
+    std::vector<std::pair<uint32_t, uint32_t>> get_compacted_edges() {
+        std::vector<std::pair<uint32_t, uint32_t>> compacted_edges;
+        for (uint32_t u = 0; u < whole_graph.size(); u++) {
+            for (uint32_t i = whole_graph.get_starting_positions_of_nodes()[u];
                  i < whole_graph.get_starting_positions_of_nodes()[u + 1];
                  i++) {
-                const int32_t v = whole_graph.get_compact_graph()[i];
+                const uint32_t v = whole_graph.get_compact_graph()[i];
                 if (u < v && !removed[u] && !removed[v]) {
                     compacted_edges.emplace_back(id_in_small_graph[u],
                                                  id_in_small_graph[v]);
@@ -194,23 +194,23 @@ class Compacted_graph_representation {
         compute_ids_and_compacted_reach();
         small_graph = new Compact_graph_representation(get_compacted_edges());
     }
-    inline const int32_t* get_reach() { return reach_compacted.data(); }
+    inline const uint32_t* get_reach() { return reach_compacted.data(); }
     inline const Compact_graph_representation get_whole_compace() {
         return whole_graph;
     }
-    inline const int32_t* get_starting_positions_of_nodes() {
+    inline const uint32_t* get_starting_positions_of_nodes() {
         return small_graph->get_starting_positions_of_nodes();
     }
 
-    inline const int32_t* get_compact_graph() {
+    inline const uint32_t* get_compact_graph() {
         return small_graph->get_compact_graph();
     }
 
-    inline int32_t size() { return small_graph->size(); }
+    inline uint32_t size() { return small_graph->size(); }
 
     std::vector<double> centrality_for_original_graph(
         const std::vector<double> centrality_for_small_graph) {
-        for (int32_t s = 0; s < whole_graph.size(); s++) {
+        for (uint32_t s = 0; s < whole_graph.size(); s++) {
             if (!removed[s]) {
                 CB[s] += centrality_for_small_graph[id_in_small_graph[s]];
             }
@@ -222,19 +222,19 @@ class Compacted_graph_representation {
 template <typename Graph_class>
 class Virtualized_graph_representation {
    protected:
-    const int32_t mdeg;
+    const uint32_t mdeg;
     Graph_class orig_graph;
-    std::vector<int32_t> vmap;
-    std::vector<int32_t> vptrs;
+    std::vector<uint32_t> vmap;
+    std::vector<uint32_t> vptrs;
 
    public:
-    Virtualized_graph_representation(Graph_class graph, int32_t mdeg)
+    Virtualized_graph_representation(Graph_class graph, uint32_t mdeg)
         : mdeg(mdeg), orig_graph(graph) {
         vmap.resize(0);
         vptrs.resize(0);
-        for (int32_t u = 0; u < orig_graph.size(); u++) {
-            int32_t how_many_vectices_for_last_node = mdeg;
-            for (int32_t i = orig_graph.get_starting_positions_of_nodes()[u];
+        for (uint32_t u = 0; u < orig_graph.size(); u++) {
+            uint32_t how_many_vectices_for_last_node = mdeg;
+            for (uint32_t i = orig_graph.get_starting_positions_of_nodes()[u];
                  i < orig_graph.get_starting_positions_of_nodes()[u + 1]; i++) {
                 if (how_many_vectices_for_last_node == mdeg) {
                     how_many_vectices_for_last_node = 0;
@@ -248,24 +248,24 @@ class Virtualized_graph_representation {
             orig_graph.get_starting_positions_of_nodes()[orig_graph.size()]);
     }
 
-    inline const int32_t* get_compact_graph() {
+    inline const uint32_t* get_compact_graph() {
         return orig_graph.get_compact_graph();
     }
-    inline int32_t size() { return vmap.size(); }
-    inline int32_t orig_size() { return orig_graph.size(); }
-    inline const int32_t* get_vmap() { return vmap.data(); }
-    inline const int32_t* get_vptrs() { return vptrs.data(); }
-    inline const int32_t* get_starting_positions_of_nodes() {
+    inline uint32_t size() { return vmap.size(); }
+    inline uint32_t orig_size() { return orig_graph.size(); }
+    inline const uint32_t* get_vmap() { return vmap.data(); }
+    inline const uint32_t* get_vptrs() { return vptrs.data(); }
+    inline const uint32_t* get_starting_positions_of_nodes() {
         return orig_graph.get_starting_positions_of_nodes();
     }
 
-    inline const int32_t* get_reach();
+    inline const uint32_t* get_reach();
     std::vector<double> centrality_for_original_graph(
         const std::vector<double> centrality_for_small_graph);
 };
 
 template <>
-inline const int32_t*
+inline const uint32_t*
 Virtualized_graph_representation<Compacted_graph_representation>::get_reach() {
     return orig_graph.get_reach();
 }
@@ -282,19 +282,19 @@ template <typename Graph_class>
 class Virtualized_graph_representation_with_stride
     : public Virtualized_graph_representation<Graph_class> {
    protected:
-    std::vector<int32_t> jmp;
+    std::vector<uint32_t> jmp;
 
    public:
     Virtualized_graph_representation_with_stride(Graph_class graph,
-                                                 int32_t mdeg)
+                                                 uint32_t mdeg)
         : Virtualized_graph_representation<Graph_class>(graph, mdeg) {
         Virtualized_graph_representation<Graph_class>::vmap.resize(0);
         Virtualized_graph_representation<Graph_class>::vptrs.resize(0);
-        for (int32_t u = 0;
+        for (uint32_t u = 0;
              u <
              Virtualized_graph_representation<Graph_class>::orig_graph.size();
              u++) {
-            const int32_t deg =
+            const uint32_t deg =
                 Virtualized_graph_representation<Graph_class>::orig_graph
                     .get_starting_positions_of_nodes()[u + 1] -
                 Virtualized_graph_representation<Graph_class>::orig_graph
@@ -304,10 +304,10 @@ class Virtualized_graph_representation_with_stride
             } else {
                 jmp.push_back(1 + (deg - 1) / mdeg);
             }
-            for (int32_t i = Virtualized_graph_representation<
-                                 Graph_class>::orig_graph
-                                 .get_starting_positions_of_nodes()[u],
-                         j = 0;
+            for (uint32_t i = Virtualized_graph_representation<
+                                  Graph_class>::orig_graph
+                                  .get_starting_positions_of_nodes()[u],
+                          j = 0;
                  j < jmp[u]; i++, j++) {
                 Virtualized_graph_representation<Graph_class>::vmap.push_back(
                     u);
@@ -322,5 +322,5 @@ class Virtualized_graph_representation_with_stride
                          .size()]);
     }
 
-    inline const int32_t* get_jmp() { return jmp.data(); }
+    inline const uint32_t* get_jmp() { return jmp.data(); }
 };

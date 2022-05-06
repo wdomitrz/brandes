@@ -8,44 +8,45 @@
 #include "errors.hpp"
 #include "sizes.hpp"
 
-__global__ void brandes_kernel(const int32_t n,
-                               const int32_t starting_positions[],
-                               const int32_t compact_graph[],
-                               const int32_t reach[], double CB[],
-                               int32_t* sigma, int32_t* d, double* delta);
+__global__ void brandes_kernel(const uint32_t n,
+                               const uint32_t starting_positions[],
+                               const uint32_t compact_graph[],
+                               const uint32_t reach[], double CB[],
+                               uint32_t* sigma, uint32_t* d, double* delta);
 
-void brandes(const int32_t n, const int32_t starting_positions[],
-             const int32_t compact_graph[], const int32_t reach[],
+void brandes(const uint32_t n, const uint32_t starting_positions[],
+             const uint32_t compact_graph[], const uint32_t reach[],
              double CB[]) {
     if (n == 0 || starting_positions[n] == 0) return;
-    int32_t *starting_positions_dev, *reach_dev, *compact_graph_dev, *sigma, *d,
-        *compact_graph_ext;
+    uint32_t *starting_positions_dev, *reach_dev, *compact_graph_dev, *sigma,
+        *d, *compact_graph_ext;
     double *delta, *CB_dev;
     compact_graph_ext =
-        (int32_t*)malloc(sizeof(int32_t) * 2 * starting_positions[n]);
-    for (int32_t i = 0; i < n; i++)
-        for (int32_t j = starting_positions[i]; j < starting_positions[i + 1];
+        (uint32_t*)malloc(sizeof(uint32_t) * 2 * starting_positions[n]);
+    for (uint32_t i = 0; i < n; i++)
+        for (uint32_t j = starting_positions[i]; j < starting_positions[i + 1];
              j++) {
             compact_graph_ext[2 * j] = i;
             compact_graph_ext[2 * j + 1] = compact_graph[j];
         }
 
-    HANDLE_ERROR(
-        cudaMalloc((void**)&starting_positions_dev, sizeof(int32_t) * (n + 1)));
-    HANDLE_ERROR(cudaMalloc((void**)&reach_dev, sizeof(int32_t) * n));
+    HANDLE_ERROR(cudaMalloc((void**)&starting_positions_dev,
+                            sizeof(uint32_t) * (n + 1)));
+    HANDLE_ERROR(cudaMalloc((void**)&reach_dev, sizeof(uint32_t) * n));
     HANDLE_ERROR(cudaMalloc((void**)&compact_graph_dev,
-                            sizeof(int32_t) * 2 * starting_positions[n]));
+                            sizeof(uint32_t) * 2 * starting_positions[n]));
     HANDLE_ERROR(cudaMalloc((void**)&CB_dev, sizeof(double) * n));
-    HANDLE_ERROR(cudaMalloc((void**)&sigma, sizeof(int32_t) * n * BLOCKS));
-    HANDLE_ERROR(cudaMalloc((void**)&d, sizeof(int32_t) * n * BLOCKS));
+    HANDLE_ERROR(cudaMalloc((void**)&sigma, sizeof(uint32_t) * n * BLOCKS));
+    HANDLE_ERROR(cudaMalloc((void**)&d, sizeof(uint32_t) * n * BLOCKS));
     HANDLE_ERROR(cudaMalloc((void**)&delta, sizeof(double) * n * BLOCKS));
     HANDLE_ERROR(cudaMemcpy(starting_positions_dev, starting_positions,
-                            sizeof(int32_t) * (n + 1), cudaMemcpyHostToDevice));
+                            sizeof(uint32_t) * (n + 1),
+                            cudaMemcpyHostToDevice));
 
-    HANDLE_ERROR(cudaMemcpy(reach_dev, reach, sizeof(int32_t) * n,
+    HANDLE_ERROR(cudaMemcpy(reach_dev, reach, sizeof(uint32_t) * n,
                             cudaMemcpyHostToDevice));
     HANDLE_ERROR(cudaMemcpy(compact_graph_dev, compact_graph_ext,
-                            sizeof(int32_t) * 2 * starting_positions[n],
+                            sizeof(uint32_t) * 2 * starting_positions[n],
                             cudaMemcpyHostToDevice));
     // HANDLE_ERROR(cudaMemset(CB_dev, 0.0, sizeof(double) * n));
     brandes_kernel<<<BLOCKS, THREADS>>>(n, starting_positions_dev,
@@ -63,22 +64,22 @@ void brandes(const int32_t n, const int32_t starting_positions[],
     free(compact_graph_ext);
 }
 
-__global__ void brandes_kernel(const int32_t n,
-                               const int32_t starting_positions[],
-                               const int32_t compact_graph[],
-                               const int32_t reach[], double CB[],
-                               int32_t* sigma_global, int32_t* d_global,
+__global__ void brandes_kernel(const uint32_t n,
+                               const uint32_t starting_positions[],
+                               const uint32_t compact_graph[],
+                               const uint32_t reach[], double CB[],
+                               uint32_t* sigma_global, uint32_t* d_global,
                                double* delta_global) {
-    const int32_t my_start = threadIdx.x;
-    const int32_t my_end = starting_positions[n];
-    const int32_t my_step = blockDim.x;
-    const int32_t my_start_n = threadIdx.x;
-    const int32_t my_end_n = n;
-    const int32_t my_step_n = blockDim.x;
+    const uint32_t my_start = threadIdx.x;
+    const uint32_t my_end = starting_positions[n];
+    const uint32_t my_step = blockDim.x;
+    const uint32_t my_start_n = threadIdx.x;
+    const uint32_t my_end_n = n;
+    const uint32_t my_step_n = blockDim.x;
     __shared__ bool cont;
-    __shared__ int32_t l;
-    __shared__ int32_t* sigma;
-    __shared__ int32_t* d;
+    __shared__ uint32_t l;
+    __shared__ uint32_t* sigma;
+    __shared__ uint32_t* d;
     __shared__ double* delta;
     if (threadIdx.x == 0) {
         sigma = &sigma_global[n * blockIdx.x];
@@ -89,11 +90,11 @@ __global__ void brandes_kernel(const int32_t n,
         for (int i = my_start; i < n; i += my_step) {
             CB[i] = 0;
         }
-    for (int32_t s = blockIdx.x; s < n; s += gridDim.x) {
+    for (uint32_t s = blockIdx.x; s < n; s += gridDim.x) {
         __syncthreads();
         for (int i = my_start_n; i < my_end_n; i += my_step_n) {
             sigma[i] = 0;
-            d[i] = -1;
+            d[i] = UINT32_MAX;
             delta[i] = reach[i];
         }
         __syncthreads();
@@ -108,11 +109,11 @@ __global__ void brandes_kernel(const int32_t n,
             __syncthreads();
             cont = false;
             __syncthreads();
-            for (int32_t i = my_start; i < my_end; i += my_step) {
-                const int32_t u = compact_graph[2 * i];
-                const int32_t v = compact_graph[2 * i + 1];
+            for (uint32_t i = my_start; i < my_end; i += my_step) {
+                const uint32_t u = compact_graph[2 * i];
+                const uint32_t v = compact_graph[2 * i + 1];
                 if (d[u] == l) {
-                    if (d[v] == -1) {
+                    if (d[v] == UINT32_MAX) {
                         d[v] = l + 1;
                         cont = true;
                     }
@@ -131,9 +132,9 @@ __global__ void brandes_kernel(const int32_t n,
             __syncthreads();
             if (threadIdx.x == 0) l--;
             __syncthreads();
-            for (int32_t i = my_start; i < my_end; i += my_step) {
-                const int32_t u = compact_graph[2 * i];
-                const int32_t v = compact_graph[2 * i + 1];
+            for (uint32_t i = my_start; i < my_end; i += my_step) {
+                const uint32_t u = compact_graph[2 * i];
+                const uint32_t v = compact_graph[2 * i + 1];
                 if (d[u] == l && d[v] == d[u] + 1 && sigma[v] != 0) {
                     atomicAdd(&delta[u], ((double)sigma[u]) /
                                              ((double)sigma[v]) *
@@ -143,7 +144,7 @@ __global__ void brandes_kernel(const int32_t n,
         }
 
         __syncthreads();
-        for (int32_t v = my_start; v < n; v += my_step) {
+        for (uint32_t v = my_start; v < n; v += my_step) {
             if (v != s) {
                 atomicAdd(&CB[v],
                           (double)reach[s] * (delta[v] - (double)reach[v]));

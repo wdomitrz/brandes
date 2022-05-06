@@ -1,5 +1,5 @@
-const struct zxcv { int32_t x = 0; } posX;
-const struct asd { int32_t x = 1; } sizeX;
+const struct zxcv { uint32_t x = 0; } posX;
+const struct asd { uint32_t x = 1; } sizeX;
 #define __global__
 #define __shared__
 #define __syncthreads() \
