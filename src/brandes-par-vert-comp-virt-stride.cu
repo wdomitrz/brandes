@@ -31,7 +31,7 @@ __global__ void brandes_kernel(const int32_t n, const int32_t virt_n,
                                const int32_t compact_graph[],
                                const int32_t reach[], const int32_t vmap[],
                                const int32_t vptrs[], const int32_t jmp[],
-                               double CB[], int32_t* sigma, int32_t* d,
+                               double CB[], uint32_t* sigma, int32_t* d,
                                double* delta);
 
 void brandes(const int32_t n, const int32_t virt_n,
@@ -43,7 +43,8 @@ void brandes(const int32_t n, const int32_t virt_n,
         return;
     }
     int32_t *starting_positions_dev, *reach_dev, *compact_graph_dev, *vmap_dev,
-        *vptrs_dev, *jmp_dev, *sigma, *d;
+        *vptrs_dev, *jmp_dev, *d;
+    uint32_t* sigma;
     double *delta, *CB_dev;
     cudaStream_t stream[6];
     for (size_t i = 0; i < 6; i++) {
@@ -64,7 +65,7 @@ void brandes(const int32_t n, const int32_t virt_n,
     HANDLE_ERROR(
         cudaMalloc((void**)&vptrs_dev, sizeof(int32_t) * (virt_n + 1)));
     HANDLE_ERROR(cudaMalloc((void**)&CB_dev, sizeof(double) * n));
-    HANDLE_ERROR(cudaMalloc((void**)&sigma, sizeof(int32_t) * n * BLOCKS));
+    HANDLE_ERROR(cudaMalloc((void**)&sigma, sizeof(uint32_t) * n * BLOCKS));
     HANDLE_ERROR(cudaMalloc((void**)&d, sizeof(int32_t) * n * BLOCKS));
     HANDLE_ERROR(cudaMalloc((void**)&delta, sizeof(double) * n * BLOCKS));
     HANDLE_ERROR(cudaEventRecord(start_with_memory, 0));
@@ -125,7 +126,7 @@ __global__ void brandes_kernel(const int32_t n, const int32_t virt_n,
                                const int32_t compact_graph[],
                                const int32_t reach[], const int32_t vmap[],
                                const int32_t vptrs[], const int32_t jmp[],
-                               double CB[], int32_t* sigma_global,
+                               double CB[], uint32_t* sigma_global,
                                int32_t* d_global, double* delta_global) {
     // const int32_t big_step = 1 + (n - 1) / blockDim.x;
     // const int32_t my_start = threadIdx. * big_step;
@@ -137,7 +138,7 @@ __global__ void brandes_kernel(const int32_t n, const int32_t virt_n,
     const int32_t my_step = blockDim.x;
     __shared__ bool cont;
     __shared__ int32_t l;
-    __shared__ int32_t* sigma;
+    __shared__ uint32_t* sigma;
     __shared__ int32_t* d;
     __shared__ double* delta;
     if (my_start == 0) {
