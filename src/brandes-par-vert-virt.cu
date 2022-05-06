@@ -4,7 +4,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "brandes-virt.hpp"
+#include "brandes-virt-nocomp.hpp"
 #include "errors.hpp"
 #include "sizes.hpp"
 
