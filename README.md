@@ -1,6 +1,14 @@
-# Brandes algorithm implemented on GPU
+---
+title: Brandes algorithm implemented on GPU
+author: Witalis Domitrz
+date: today
+---
 
-## Comment
+## Comment on hiperparameters
+
+The hiperparameters in file `sizes.hpp` were chosen to work well with graphs of size of the one from `loc-gowalla_edges.txt` file (or up to 4.5 times larger). If one wants to test the programme on greater graphs, decreasing `BLOCKS` constant in `sizes.hpp` is recommended - though it might affect the performance. I have chosen this parameter, as it allows us to use the programme on graphs on which the programme terminates in under 5 minutes (as specified in the task description).
+
+This variable controls the *coarse-grained parallelism*, which directly impacts the memory requirement for the programme.
 
 ## Source files
 
