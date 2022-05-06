@@ -1,5 +1,5 @@
 ---
-title: Brandes algorithm on GPU
+title: CUDA implementation of Brandes algorithm
 author: Witalis Domitrz
 ---
 
@@ -14,8 +14,8 @@ This variable controls the *coarse-grained parallelism*, which directly impacts 
 I provide source code in `src` directory. The files in that directory are:
 
 * `sizes.hpp` -- defines of size of the blocks and grid (used to run the kernel) and the *mdeg* hyperparameter (used in implementations with vertex virtualization optimization).
-* `errors.hpp` -- definition of a function (and a macro) used to handle cuda errors.
-* `disable_cuda.hpp` -- a file with defines used in early stage of development to move the cuda code to a host code (useful for testing without an access to Nvidia GPU).
+* `errors.hpp` -- definition of a function (and a macro) used to handle CUDA errors.
+* `disable_cuda.hpp` -- a file with defines used in early stage of development to move the CUDA code to a host code (useful for testing without an access to Nvidia GPU).
 * `compact_graph_representation.hpp` -- an **important** file in which I create a
     * `Compact_graph_representation` -- a class that provides a *CRS representation* of a graph;
     * `Compacted_graph_representation` -- a class that compresses a graph (by iteratively removing nodes of degree 0) and provides a *CRS representation* of such a compressed graph. It also can create betweens centrality for all vertices in the original graph, when provided betweens centrality for the compressed graph.
@@ -27,14 +27,14 @@ I provide source code in `src` directory. The files in that directory are:
         * `brandes-seq-vector.cpp` -- implementation in which we get rid of the `queue` and `stack` by replacing them both with `vector`s.
         * `brandes-seq-array.cpp` -- last sequential implementation, without using `stl` at all. It uses C style `arrays`.
     * `brandes.cpp` -- a file used to execute the sequential implementations of the Brandes algorithms.
-    * `brandes-old.hpp` -- a file which provides the declaration of the function used for both the sequential implementations and the most basic versions of the cuda implementations.
-    * `brandes-old.cu` -- a file used to execute the basic cuda implementations -- `brandes-par-{vert,edge,vert-queue}`.
-    * `brandes.{cu,hpp}` -- files used to execute, and provide an interface for, the basic cuda implementations using just compacted graph representation -- `brandes-par-{vert,edge,vert-queue}-comp`.
-    * `brandes.{cu,hpp}` -- files used to execute, and provide an interface for, the cuda implementations using just compacted graph representation -- `brandes-par-{vert,edge,vert-queue}-comp`.
-    * `brandes-virt-nocomp.{cu,hpp}` -- files used to execute, and provide an interface for, the cuda implementation using only *Virtual-CSR representation* -- `brandes-par-vert-virt`.
-    * `brandes-virt.{cu,hpp}` -- files used to execute, and provide an interface for, the cuda implementation using BOTH compacted graph representation and *Virtual-CSR representation* -- `brandes-par-vert-comp-virt`.
-    * `brandes-virt-stride-nocomp.{cu,hpp}` -- files used to execute, and provide an interface for, the cuda implementation using only *Stride-CSR representation* -- `brandes-par-vert-virt-stride`.
-    * `brandes-virt-stride.{cu,hpp}` -- files used to execute, and provide an interface for, the cuda implementation using BOTH compacted graph representation and *Stride-CSR representation* -- `brandes-par-vert-comp-virt-stride*`. **These are the files used in the fastest version.**
+    * `brandes-old.hpp` -- a file which provides the declaration of the function used for both the sequential implementations and the most basic versions of the CUDA implementations.
+    * `brandes-old.cu` -- a file used to execute the basic CUDA implementations -- `brandes-par-{vert,edge,vert-queue}`.
+    * `brandes.{cu,hpp}` -- files used to execute, and provide an interface for, the basic CUDA implementations using just compacted graph representation -- `brandes-par-{vert,edge,vert-queue}-comp`.
+    * `brandes.{cu,hpp}` -- files used to execute, and provide an interface for, the CUDA implementations using just compacted graph representation -- `brandes-par-{vert,edge,vert-queue}-comp`.
+    * `brandes-virt-nocomp.{cu,hpp}` -- files used to execute, and provide an interface for, the CUDA implementation using only *Virtual-CSR representation* -- `brandes-par-vert-virt`.
+    * `brandes-virt.{cu,hpp}` -- files used to execute, and provide an interface for, the CUDA implementation using BOTH compacted graph representation and *Virtual-CSR representation* -- `brandes-par-vert-comp-virt`.
+    * `brandes-virt-stride-nocomp.{cu,hpp}` -- files used to execute, and provide an interface for, the CUDA implementation using only *Stride-CSR representation* -- `brandes-par-vert-virt-stride`.
+    * `brandes-virt-stride.{cu,hpp}` -- files used to execute, and provide an interface for, the CUDA implementation using BOTH compacted graph representation and *Stride-CSR representation* -- `brandes-par-vert-comp-virt-stride*`. **These are the files used in the fastest version.**
 * `brandes-par*.cu` -- files with implementations of the kernels.
     * `brandes-par-vert.cu` -- kernel implementing vertex parallel version of the algorithm.
     * `brandes-par-edge.cu` -- kernel implementing edge parallel version of the algorithm.
@@ -53,11 +53,11 @@ In the repository, there also is `scripts` directory, with some scripts that I u
 ## Algorithm
 
 In my implementation I use both *fine* and *coarse-grained parallelism*.
-The cuda kernel is executed exactly once, and in the kernel, the *fine-grained parallelism* appears inside each block, and the *coarse-grained parallelism* appears between the blocks.
+The CUDA kernel is executed exactly once, and in the kernel, the *fine-grained parallelism* appears inside each block, and the *coarse-grained parallelism* appears between the blocks.
 
 ### Fine-grained parallelism
 
-All threads in a block are used to compute `BFS` for the same vertex *s* at the same time. It is done, as described in the provided paper, by synchronizing the threads so to make them work on the same *layer* of the graph (given by the distance from the node *s*). When all the threads finish processing one layer, they go to the next *layer*. The synchronization is done using the cuda methods for synchronizing threads inside a block.
+All threads in a block are used to compute `BFS` for the same vertex *s* at the same time. It is done, as described in the provided paper, by synchronizing the threads so to make them work on the same *layer* of the graph (given by the distance from the node *s*). When all the threads finish processing one layer, they go to the next *layer*. The synchronization is done using the CUDA methods for synchronizing threads inside a block.
 
 ### Coarse-grained parallelism
 
