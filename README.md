@@ -36,7 +36,7 @@ I provide source code in `src` directory. The files in that directory are:
     * `brandes-virt.{cu,hpp}` -- files used to execute, and provide an interface for, the cuda implementation using BOTH compacted graph representation and *Virtual-CSR representation* -- `brandes-par-vert-comp-virt`.
     * `brandes-virt-stride-nocomp.{cu,hpp}` -- files used to execute, and provide an interface for, the cuda implementation using only *Stride-CSR representation* -- `brandes-par-vert-virt-stride`.
     * `brandes-virt-stride.{cu,hpp}` -- files used to execute, and provide an interface for, the cuda implementation using BOTH compacted graph representation and *Stride-CSR representation* -- `brandes-par-vert-comp-virt-stride*`. **These are the files used in the fastest version.**
-* `brandes-par*.cu` -- filest with implementations of the kernels.
+* `brandes-par*.cu` -- files with implementations of the kernels.
     * `brandes-par-vert.cu` -- kernel implementing vertex parallel version of the algorithm.
     * `brandes-par-edge.cu` -- kernel implementing edge parallel version of the algorithm.
     * `brandes-par-vert-queue.cu` -- kernel implementing vertex parallel version of the algorithm with queues (see *Unsuccessful optimizations* for description).
@@ -140,7 +140,7 @@ For that optimization see the next section, as I just did not implement the slow
 
 ## Possible, currently pointless, modifications
 
-Here I discuss some modifications of the code that we would not benefit from, but if having faster GPUs and slower CPUs with fast memory transfer between them, or at least having a grapl of reasonable size already in the memory of GPU, might be a reasonable approach to think of.
+Here I discuss some modifications of the code that we would not benefit from, but if having faster GPUs and slower CPUs with fast memory transfer between them, or at least having a graph of reasonable size already in the memory of GPU, might be a reasonable approach to think of.
 
 ### Computing prefix sums on GPU
 
